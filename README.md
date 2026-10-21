@@ -42,6 +42,26 @@ Existing accessory names and types are locked in the custom editor to preserve t
 
 Unknown configuration fields and existing child-bridge settings survive edits. The JSON schema is also included for validation and standard tooling. Editing settings never executes a device command.
 
+### Screenshots
+
+Light-mode settings captured in Homebridge UI with a dedicated demo configuration. The sample commands shown only change local demo state; they are not bundled device integrations.
+
+![Switch settings with a sample Desk fan and separate on/off commands](docs/screenshots/cmdswitch3-switch-light.jpg)
+
+<details>
+<summary>Dimmer settings</summary>
+
+![Reading lamp dimmer settings using HB_BRIGHTNESS](docs/screenshots/cmdswitch3-dimmer-light.jpg)
+
+</details>
+
+<details>
+<summary>Quiet logging and sequential commands</summary>
+
+![Preferences with optional No logs and Sequential commands](docs/screenshots/cmdswitch3-preferences-light.jpg)
+
+</details>
+
 ### Example
 
 These are placeholder script paths, not supplied device integrations:
