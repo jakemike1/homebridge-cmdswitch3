@@ -14,6 +14,8 @@ npm install -g homebridge-cmdswitch3@beta
 
 The explicit `@beta` tag selects the testing release. This is not a stable release and does not automatically replace cmdSwitch2. Restart Homebridge after the first installation so it discovers the new plugin. Configure **cmdSwitch3** in Homebridge UI, preferably on its own child bridge for a fresh setup.
 
+**npm tag note:** npm automatically added `latest` to this package's first release despite publishing with `--tag beta`, and rejected removing it with HTTP 400. Both `@beta` and an unqualified install can therefore select this beta. The `latest` tag does not mean a stable 1.0.0 has been released. See [npm/cli#8490](https://github.com/npm/cli/issues/8490) for the reported registry behaviour.
+
 [Report a bug or share test results](https://github.com/jakemike1/homebridge-cmdswitch3/issues/new/choose) · [Release notes](CHANGELOG.md)
 
 ## What is included
