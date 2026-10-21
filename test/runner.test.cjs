@@ -44,6 +44,27 @@ test("invalid command settles as Error without spawning", async (t) => {
   assert.equal(r.active.size, 0);
 });
 
+test("stdout and stderr stream errors reject safely, stop the process and omit raw error details", async (t) => {
+  const r = runner(t);
+  for (const channel of ["stdout", "stderr"]) {
+    const job = r.run(node("setInterval(()=>{},1000)"), 2000);
+    const rejected = assert.rejects(job.promise, (error) => {
+      assert.equal(error.code, "OUTPUT_FAILED");
+      assert.ok(!error.message.includes("SYNTHETIC_SECRET"));
+      return true;
+    });
+    const stream = job.child[channel];
+    assert.doesNotThrow(() => {
+      stream.emit("error", new Error("SYNTHETIC_SECRET"));
+      stream.emit("error", new Error("SYNTHETIC_SECRET_AGAIN"));
+    });
+    await rejected;
+    assert.equal(r.active.size, 0);
+    assert.equal(r.groupExists(job), false);
+    assert.deepEqual(job.stdout, []);
+  }
+});
+
 test("output is bounded and excluded from returned error", async (t) => {
   const r = runner(t, { maxOutputBytes: 1024 });
   const command = node(

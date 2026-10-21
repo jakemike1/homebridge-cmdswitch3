@@ -2,7 +2,9 @@
 
 Command switches and dimmable lights for **Homebridge 2**. A maintained successor built from [luisiam/homebridge-cmdswitch2](https://github.com/luisiam/homebridge-cmdswitch2), with a tidy settings page, optional quiet logging and bounded command execution.
 
-**Public beta: 1.0.0-beta.2.** Testers are welcome. Start with a fresh or isolated installation and follow [TESTING.md](TESTING.md). Existing cmdSwitch2 installations need a deliberate migration: read [MIGRATION.md](MIGRATION.md) before changing anything.
+**Public beta: 1.0.0-beta.3.** Testers are welcome. Start with a fresh or isolated installation and follow [TESTING.md](TESTING.md). Existing cmdSwitch2 installations need a deliberate migration: read [MIGRATION.md](MIGRATION.md) before changing anything.
+
+Beta.3 hardens startup, cached-accessory handling and command cleanup; see [CHANGELOG.md](CHANGELOG.md). cmdSwitch3 has not been verified by the Homebridge team.
 
 ## Install the beta
 
@@ -14,7 +16,7 @@ npm install -g homebridge-cmdswitch3@beta
 
 The explicit `@beta` tag selects the testing release. This is not a stable release and does not automatically replace cmdSwitch2. Restart Homebridge after the first installation so it discovers the new plugin. Configure **cmdSwitch3** in Homebridge UI, preferably on its own child bridge for a fresh setup.
 
-**npm tag note:** npm automatically added `latest` to this package's first release despite publishing with `--tag beta`, and rejected removing it with HTTP 400. Both `@beta` and an unqualified install can therefore select this beta. The `latest` tag does not mean a stable 1.0.0 has been released. See [npm/cli#8490](https://github.com/npm/cli/issues/8490) for the reported registry behaviour.
+**npm tag note:** npm automatically added `latest` to this package's first release despite publishing with `--tag beta`, and rejected removing it with HTTP 400. An unqualified install can therefore select a beta version, and may lag behind `@beta`. Use the explicit `@beta` tag for the current testing release. The `latest` tag does not mean a stable 1.0.0 has been released. See [npm/cli#8490](https://github.com/npm/cli/issues/8490) for the reported registry behaviour.
 
 [Report a bug or share test results](https://github.com/jakemike1/homebridge-cmdswitch3/issues/new/choose) · [Release notes](CHANGELOG.md)
 
@@ -32,7 +34,7 @@ The explicit `@beta` tag selects the testing release. This is not a stable relea
 
 Homebridge 2.x, Node 22, 24 or 26, and Linux or macOS. Use a Node version supported by your Homebridge installation. Windows and Homebridge 1 are unsupported.
 
-I tested the runtime against Homebridge 2.4.0 / HAP-NodeJS 2.2.2 on Node 22.23.3, 24.19.0 and 26.0.0, with 68 automated tests passing on each. One Raspberry Pi installation now runs the same runtime from the private beta.1 build: six migrated switches retained their HomeKit identities and pairing data, and all 42 readable characteristics passed. This is early validation, not a guarantee for other installations. Physical dimming and controller-side automation execution still need broader testing. [Testing coverage and limitations](TESTING.md#what-has-been-tested) explain the evidence.
+Beta.3 passed 77 automated tests and an offline packed-install check on each of Node 22.23.3, 24.19.0 and 26.0.0 on macOS, against Homebridge 2.4.0 / HAP-NodeJS 2.2.2. CI covers Linux and macOS on all three Node majors. An earlier Raspberry Pi migration using the private beta.1 runtime retained six switches' HomeKit identities and pairing data, with all 42 readable characteristics passing. That installation has not been updated to beta.3. Physical dimming and controller-side automation execution still need broader testing. [Testing coverage and limitations](TESTING.md#what-has-been-tested) explain the evidence.
 
 ## Settings
 
@@ -41,6 +43,16 @@ Open the plugin's **Settings** page in Homebridge UI. Add an accessory, choose *
 Existing accessory names and types are locked in the custom editor to preserve their identities. Rename their visible tiles in Apple Home. Removing an accessory requires a confirmation in the editor. The runtime refuses to silently replace a cached switch with a lightbulb or vice versa.
 
 Unknown configuration fields and existing child-bridge settings survive edits. The JSON schema is also included for validation and standard tooling. Editing settings never executes a device command.
+
+The custom editor currently edits the first cmdSwitch3 platform block returned by Homebridge UI. Additional blocks are preserved. Use Homebridge's JSON configuration editor for those additional blocks, keeping their accessory names, types and child-bridge identifiers intact.
+
+### Startup and error recovery
+
+Installing the package alone starts no commands. A platform without a `switches` list stays inactive and retains its cached accessories. An explicit empty list (`"switches": []`) intentionally removes that platform's cached accessories when it starts.
+
+Invalid settings, inconsistent cached identities/services or an unexpected accessory startup/state-publication failure disable the affected platform and log a diagnostic, even when No logs is enabled. Commands and polling stop; cached accessories are retained. HomeKit requests on bound accessories report an error while the platform is disabled. Correct the cause and restart its child bridge; do not delete pairing or cache files as a workaround. Unexpected error details and command contents are omitted from logs.
+
+Ordinary command failures affect the operation/accessory and can recover on a later successful read or write. They do not automatically disable the whole platform. A command-output stream failure is reported as `OUTPUT_FAILED` and stops that command.
 
 ### Screenshots
 
@@ -129,10 +141,13 @@ The plugin can only act on a shell's final exit status. Use `first-command && se
 npm ci --ignore-scripts
 npm run build
 npm run format:check
+npm run test:package
 npm pack --ignore-scripts
 ```
 
 `build` runs syntax/shared-validator checks and the test suite. `build:ui` regenerates the browser validator from the runtime validator after changes to `config.js`. `publishConfig.tag` defaults publication to `beta`; stable releases require an explicit release decision. The tarball contains only runtime files, UI assets and documentation, excluding tests, preview fixtures and development dependencies.
+
+`test:package` packs and installs the actual archive offline in a disposable directory. It compares installed bytes with source and exercises real Homebridge registration, inactive startup, harmless commands and shutdown without a TTY or publishing a HomeKit server. It never installs globally or accesses an existing Homebridge instance.
 
 For a browser preview, extract the official `homebridge-config-ui-x@5.28.0` npm package into a temporary directory and set `HOMEBRIDGE_UI_PATH` to its `package` directory, then run `npm run preview`. It binds only to `127.0.0.1:43183`, uses example accessories, and does not start Homebridge or execute configured commands. Its Save button affects only the preview's in-memory draft. The same packaged settings HTML/CSS/JS runs inside the real Homebridge UI bridge.
 

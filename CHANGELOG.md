@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.0-beta.3 — startup and cleanup hardening
+
+- Contain invalid configuration, malformed cached accessories and unexpected startup/state-publication errors. Log a sanitized diagnostic, stop the affected platform and retain cached accessories instead of throwing through Homebridge lifecycle events.
+- Keep platforms without a switch list inactive. Preserve explicit empty-list removal for deliberate configuration changes, and prevent repeated startup events from duplicating work.
+- Close the scheduler before releasing command reservations during shutdown or disablement, so cleanup cannot launch queued actions.
+- Handle stdout/stderr stream errors as bounded command failures, without logging their contents.
+- Add lifecycle/stream regression tests and an offline packed-install smoke check to Linux/macOS Node 22/24/26 CI. Keep existing identity, dimming, sequencing, quiet-logging and settings tests.
+- Document error recovery and the custom editor's first-platform limitation. Use portable shell commands in the beta test examples.
+
+This remains a public beta, not a Homebridge verification approval. Existing installations change only when their owner updates them; this release does not automatically migrate cmdSwitch2 accessories.
+
 ## 1.0.0-beta.2 — first public beta
 
 - Publish as `homebridge-cmdswitch3` under npm's `beta` tag, for Homebridge 2 on Linux and macOS.

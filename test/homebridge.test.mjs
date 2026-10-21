@@ -335,17 +335,22 @@ test("prototype names are ordinary switches, while duplicate config is rejected"
   });
   f.api.emit("didFinishLaunching");
   assert.equal(f.registered.length, 2);
-  assert.throws(
-    () => fixture(t, { switches: [{ name: "X" }, { name: "X" }] }),
-    /Duplicate/,
-  );
+  const invalid = fixture(t, { switches: [{ name: "X" }, { name: "X" }] });
+  assert.equal(invalid.p.disabled, true);
+  assert.match(invalid.logs.join(), /Duplicate switch name/);
+  assert.doesNotThrow(() => invalid.api.emit("didFinishLaunching"));
+  assert.equal(invalid.registered.length, 0);
+  assert.equal(invalid.removed.length, 0);
 });
 
 test("malformed cached services are retained with an error instead of silently replaced", (t) => {
   const f = fixture(t);
   const a = new PlatformAccessory("Broken", hap.uuid.generate("Broken"), 8);
   a.context.name = "Broken";
-  assert.throws(() => f.p.configureAccessory(a), /replacement refused/);
+  assert.doesNotThrow(() => f.p.configureAccessory(a));
+  assert.equal(f.p.disabled, true);
+  assert.match(f.logs.join(), /Invalid cached accessory identity or services/);
+  assert.doesNotThrow(() => f.api.emit("didFinishLaunching"));
   assert.equal(f.removed.length, 0);
   assert.equal(f.registered.length, 0);
 });
@@ -418,10 +423,9 @@ test("cached type mismatch aborts the whole launch before adding or removing acc
   existing.context.name = "Existing";
   existing.addService(hap.Service.Switch, "Existing");
   f.p.configureAccessory(existing);
-  assert.throws(
-    () => f.api.emit("didFinishLaunching"),
-    /automatic replacement refused/,
-  );
+  assert.doesNotThrow(() => f.api.emit("didFinishLaunching"));
+  assert.equal(f.p.disabled, true);
+  assert.match(f.logs.join(), /Cached accessory type differs/);
   assert.equal(f.registered.length, 0);
   assert.equal(f.removed.length, 0);
   assert.equal(f.p.controllers.size, 0);
@@ -472,11 +476,225 @@ test("sequential setting configures a single runner; the old wizard is absent", 
   for (const synchronous of [false, true]) {
     const p = new Platform(
       () => {},
-      { synchronous, maxConcurrentCommands: 4 },
+      { synchronous, maxConcurrentCommands: 4, switches: [] },
       new EventEmitter(),
     );
     t.after(() => p.dispose());
     assert.equal(p.runner.concurrency, synchronous ? 1 : 4);
     assert.equal(p.configurationRequestHandler, undefined);
   }
+});
+
+function cachedSwitch(name = "Existing", uuidName = name) {
+  const accessory = new PlatformAccessory(name, hap.uuid.generate(uuidName), 8);
+  accessory.context = { name, state: true };
+  accessory.addService(hap.Service.Switch, name);
+  return accessory;
+}
+
+test("missing switch configuration stays inert and retains cached accessories with unavailable handlers", async (t) => {
+  for (const config of [null, {}, { platform: "cmdSwitch3", noLogs: true }]) {
+    const f = fixture(t, config);
+    const accessory = cachedSwitch();
+    const before = identity(accessory);
+    f.p.configureAccessory(accessory);
+    f.api.emit("didFinishLaunching");
+    assert.equal(f.p.configured, false);
+    assert.equal(f.p.runner, undefined);
+    assert.equal(f.p.controllers.size, 0);
+    assert.deepEqual(identity(accessory), before);
+    assert.equal(f.registered.length, 0);
+    assert.equal(f.removed.length, 0);
+    const on = accessory
+      .getService(hap.Service.Switch)
+      .getCharacteristic(hap.Characteristic.On);
+    await assert.rejects(on.handleGetRequest());
+    await assert.rejects(on.handleSetRequest(false));
+    assert.deepEqual(f.logs, []);
+  }
+});
+
+test("invalid configuration logs safe errors even in quiet mode and never escapes lifecycle callbacks", async (t) => {
+  for (const config of [
+    { switches: null },
+    { switches: [{ name: "" }] },
+    {
+      switches: [{ name: "Existing", on_cmd: { secret: "SYNTHETIC_SECRET" } }],
+    },
+    { switches: [{ name: "Existing", interval: "SYNTHETIC_SECRET" }] },
+    { switches: [], maxConcurrentCommands: 0 },
+  ]) {
+    const f = fixture(t, { ...config, noLogs: true });
+    const accessory = cachedSwitch();
+    const before = identity(accessory);
+    let otherListenerRan = false;
+    f.api.on("didFinishLaunching", () => {
+      otherListenerRan = true;
+    });
+    assert.doesNotThrow(() => f.p.configureAccessory(accessory));
+    assert.doesNotThrow(() => f.api.emit("didFinishLaunching"));
+    assert.equal(otherListenerRan, true);
+    assert.equal(f.p.disabled, true);
+    assert.deepEqual(identity(accessory), before);
+    assert.equal(f.registered.length, 0);
+    assert.equal(f.removed.length, 0);
+    assert.equal(f.runner.jobs.length, 0);
+    assert.equal(f.logs.length, 1);
+    assert.match(f.logs[0], /cmdSwitch3 disabled/);
+    assert.ok(!f.logs[0].includes("SYNTHETIC_SECRET"));
+    await assert.rejects(f.p.handle(accessory.context, "set", false));
+  }
+});
+
+test("ambiguous cached identities or services disable startup without replacing or deleting anything", (t) => {
+  for (const defect of [
+    "uuid",
+    "name",
+    "context-null",
+    "duplicate",
+    "multiple-switches",
+    "mixed-types",
+  ]) {
+    const f = fixture(t, { switches: [{ name: "Existing" }, { name: "New" }] });
+    const existing = cachedSwitch();
+    f.p.configureAccessory(existing);
+    const broken = cachedSwitch(
+      "Broken",
+      defect === "uuid" ? "Different" : "Broken",
+    );
+    if (defect === "name") delete broken.context.name;
+    if (defect === "context-null") broken.context = null;
+    if (defect === "duplicate") {
+      broken.context.name = "Existing";
+      broken.UUID = existing.UUID;
+    }
+    if (defect === "multiple-switches")
+      broken.addService(hap.Service.Switch, "Second", "second");
+    if (defect === "mixed-types")
+      broken.addService(hap.Service.Lightbulb, "Other");
+    const before = [existing, broken].map(identity);
+    assert.doesNotThrow(() => f.p.configureAccessory(broken));
+    assert.doesNotThrow(() => f.api.emit("didFinishLaunching"));
+    assert.equal(f.p.disabled, true);
+    assert.deepEqual([existing, broken].map(identity), before);
+    assert.equal(f.registered.length, 0);
+    assert.equal(f.removed.length, 0);
+    assert.equal(f.runner.jobs.length, 0);
+    let identified = false;
+    assert.doesNotThrow(() =>
+      broken.emit("identify", false, () => {
+        identified = true;
+      }),
+    );
+    if (!["multiple-switches", "mixed-types"].includes(defect))
+      assert.equal(identified, true);
+    f.api.emit("shutdown");
+    assert.equal(f.p.bindings.size, 0);
+  }
+});
+
+test("explicit empty switches allows intentional removal; repeated launch cannot duplicate commands", (t) => {
+  const empty = fixture(t, { switches: [] });
+  const accessory = cachedSwitch();
+  empty.p.configureAccessory(accessory);
+  empty.api.emit("didFinishLaunching");
+  assert.deepEqual(empty.removed, [accessory]);
+  empty.api.emit("didFinishLaunching");
+  assert.equal(empty.removed.length, 1);
+
+  const f = fixture(t);
+  f.api.emit("didFinishLaunching");
+  const jobs = f.runner.jobs.length;
+  f.api.emit("didFinishLaunching");
+  assert.equal(f.runner.jobs.length, jobs);
+  assert.equal(f.registered.length, settings.length);
+});
+
+test("unexpected startup errors are sanitized, stop active work and preserve unrelated cached accessories", async (t) => {
+  const f = fixture(t, {
+    noLogs: true,
+    switches: [
+      { name: "Existing", state_cmd: "SYNTHETIC_STATE" },
+      { name: "New" },
+    ],
+  });
+  const retained = [cachedSwitch(), cachedSwitch("Retained")];
+  const before = retained.map(identity);
+  retained.forEach((accessory) => f.p.configureAccessory(accessory));
+  f.api.registerPlatformAccessories = () => {
+    throw new Error("SYNTHETIC_SECRET");
+  };
+  assert.doesNotThrow(() => f.api.emit("didFinishLaunching"));
+  await turn();
+  assert.equal(f.p.disabled, true);
+  assert.equal(f.removed.length, 0);
+  assert.deepEqual(retained.map(identity), before);
+  assert.ok(
+    [...f.p.controllers.values()].every((controller) => controller.closed),
+  );
+  assert.match(f.logs.join(), /Accessory startup failed/);
+  assert.ok(!f.logs.join().includes("SYNTHETIC_SECRET"));
+  await assert.rejects(f.p.handle(retained[0].context, "get"));
+});
+
+test("failed state publication during a read returns a HAP error and stops background polling", async (t) => {
+  const f = fixture(t, {
+    noLogs: true,
+    switches: [{ name: "Existing", state_cmd: "STATE" }],
+  });
+  f.api.emit("didFinishLaunching");
+  const on = f.p.accessories.Existing.getService(
+    hap.Service.Switch,
+  ).getCharacteristic(hap.Characteristic.On);
+  on.updateValue = () => {
+    throw new Error("SYNTHETIC_SECRET");
+  };
+  const read = assert.rejects(on.handleGetRequest());
+  f.runner.jobs[0].done();
+  await read;
+  await turn();
+  assert.equal(f.p.disabled, true);
+  assert.match(f.logs.join(), /Could not update accessory state/);
+  assert.ok(!f.logs.join().includes("SYNTHETIC_SECRET"));
+  assert.equal(f.removed.length, 0);
+  assert.equal(f.p.controllers.get("Existing").pollTimer, null);
+});
+
+test("momentary reset publication errors are contained outside request handlers", async (t) => {
+  const f = fixture(t, {
+    noLogs: true,
+    switches: [{ name: "Momentary", on_cmd: "ON" }],
+  });
+  f.api.emit("didFinishLaunching");
+  const on = f.p.accessories.Momentary.getService(
+    hap.Service.Switch,
+  ).getCharacteristic(hap.Characteristic.On);
+  const write = on.handleSetRequest(true);
+  await turn();
+  f.runner.jobs[0].done();
+  await write;
+  await turn();
+  on.updateValue = () => {
+    throw new Error("SYNTHETIC_SECRET");
+  };
+  await new Promise((resolve) => setTimeout(resolve, 1100));
+  assert.equal(f.p.disabled, true);
+  assert.match(f.logs.join(), /Could not update accessory state/);
+  assert.ok(!f.logs.join().includes("SYNTHETIC_SECRET"));
+  assert.equal(f.runner.jobs.length, 1);
+});
+
+test("platform shutdown closes the scheduler before releasing a blocked command", async (t) => {
+  const { CommandRunner } = require("../command-runner");
+  const f = fixture(t, { switches: [], synchronous: true });
+  f.p.runner = new CommandRunner({ concurrency: 1 });
+  const reservation = f.p.runner.reserve();
+  const blocked = f.p.runner.run("exit 0", 2000);
+  const cancelled = assert.rejects(blocked.promise, { code: "CANCELLED" });
+  f.p.controllers.set("Reserved", {
+    dispose: () => f.p.runner.release(reservation),
+  });
+  f.api.emit("shutdown");
+  await cancelled;
+  assert.equal(blocked.child, null);
 });

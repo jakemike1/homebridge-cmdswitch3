@@ -17,13 +17,13 @@ This optional configuration exercises the UI and momentary-switch behaviour with
   "switches": [
     {
       "name": "cmdSwitch3 beta test button",
-      "on_cmd": "/bin/true"
+      "on_cmd": "exit 0"
     }
   ]
 }
 ```
 
-After saving and restarting the relevant bridge, switching this button ON should return it to OFF after about one second. It has no background polling and its action does nothing. Remove only this test accessory when finished.
+After saving and restarting the relevant bridge, switching this button ON should return it to OFF after about one second. It has no background polling and its action does nothing. `exit 0` is a shell builtin on both supported operating systems; unlike `/bin/true`, it does not depend on an executable's location. Remove only this test accessory when finished.
 
 ## Useful checks
 
@@ -34,7 +34,7 @@ Run checks only when the resulting device actions are appropriate. Keep routine 
 | Switch and state    | ON/OFF, external state change, polling                                         | Home follows the successful action and subsequent state checks.                                                       |
 | Dimming             | Set 25%, then 75%; OFF then ON                                                 | The last successful positive brightness returns. A state script prints a plain integer 0–100.                         |
 | Sequential commands | Enable Preferences → Sequential commands, then write to two test accessories   | Commands run one at a time in acceptance order.                                                                       |
-| Failure handling    | Use a disposable test action with `/bin/false`                                 | Home reports failure; the last confirmed state remains. There is no retry.                                            |
+| Failure handling    | Use a disposable test action with `exit 1`                                     | Home reports failure; the last confirmed state remains. There is no retry.                                            |
 | Deadline            | Use a disposable test action with `sleep 15`                                   | The default eight-second action deadline ends the command; later queued actions for that accessory are cancelled.     |
 | Quiet logging       | Enable No logs, perform a successful action, then the disposable failure check | Routine plugin messages disappear; errors remain. This does not control logs from other plugins or external services. |
 | Settings            | Light/dark theme, narrow screen, edit/save/reopen, invalid values              | Fields remain usable, saved settings return, invalid edits are rejected.                                              |
@@ -64,6 +64,12 @@ One Raspberry Pi deployment on Node 24.19.0 / Homebridge 2.4.0 passed 57 runtime
 The settings page was browser-tested in desktop, narrow, light and dark layouts using Homebridge UI 5.28.0 assets and a synthetic host. A source-less MutationObserver console diagnostic was observed; no functional UI failure was reproduced, and its origin is unconfirmed. Live browser interaction across other Homebridge UI versions needs testing.
 
 Beta.2 changes release metadata, documentation and development/release tooling. Its packaged runtime and settings assets are unchanged from beta.1. CI runs the automated suite on Linux and macOS with Node 22, 24 and 26. Hardware dimming, larger installations, diverse command scripts and prolonged operation remain the main gaps.
+
+### Beta.3
+
+The verification-readiness changes add regression coverage for malformed configuration/cache, missing versus empty switch lists, startup and background publication failures, safe shutdown order and command stream errors. Tests retain synthetic accessory identities and verify that commands and raw error details are not logged. All 77 tests and the packed-install check pass locally on macOS arm64 with Node 22.23.3, 24.19.0 and 26.0.0. The maintainer's Pi remains on the earlier runtime; beta.3 has not been deployed there.
+
+Run `npm run build`, `npm run format:check` and `npm run test:package`. The last check installs the exact tarball offline into a disposable directory, checks its bytes and absence of install hooks/runtime dependencies, and tests real Homebridge API startup and harmless HAP writes without advertising a bridge. CI runs it on both supported operating systems. Check the exact release commit's [CI results](https://github.com/jakemike1/homebridge-cmdswitch3/actions) alongside the release notes; local macOS results alone do not establish Linux compatibility.
 
 ## Stable release criteria
 

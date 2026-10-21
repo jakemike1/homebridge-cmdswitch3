@@ -1,6 +1,6 @@
 {
   "name": "homebridge-cmdswitch3",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "description": "Command switches and dimmers for Homebridge with bounded sequential execution and optional quiet logging.",
   "main": "index.js",
   "license": "Apache-2.0",
@@ -42,6 +42,7 @@
   "scripts": {
     "test": "node --test test/*.test.cjs test/*.test.mjs",
     "test:hb2": "node --test test/homebridge.test.mjs",
+    "test:package": "node scripts/package-smoke.cjs",
     "check": "node scripts/check.cjs && node scripts/build-ui.cjs --check",
     "format:check": "prettier --check *.js *.json *.md scripts test/*.cjs test/*.mjs homebridge-ui/public/index.html homebridge-ui/public/settings.*",
     "build": "npm run check && npm test",

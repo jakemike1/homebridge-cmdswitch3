@@ -3,26 +3,31 @@
 const module = { exports: {} };
 "use strict";
 
+// Only these controlled validation messages are safe to include in diagnostics.
+class ConfigError extends Error {}
+
 function integer(value, fallback, min, max, label) {
   if (value === undefined || value === "") return fallback;
   if (typeof value !== "number" && typeof value !== "string")
-    throw new Error(`${label} must be an integer`);
+    throw new ConfigError(`${label} must be an integer`);
   const number = Number(value);
   if (!Number.isInteger(number) || number < min || number > max) {
-    throw new Error(`${label} must be an integer between ${min} and ${max}`);
+    throw new ConfigError(
+      `${label} must be an integer between ${min} and ${max}`,
+    );
   }
   return number;
 }
 
 function normalizeSwitch(input) {
   if (!input || typeof input !== "object" || Array.isArray(input))
-    throw new Error("Invalid switch configuration");
+    throw new ConfigError("Invalid switch configuration");
   if (
     typeof input.name !== "string" ||
     !input.name.trim() ||
     input.name.length > 128
   ) {
-    throw new Error(
+    throw new ConfigError(
       "Each switch needs a nonempty name of at most 128 characters",
     );
   }
@@ -35,14 +40,14 @@ function normalizeSwitch(input) {
       !input[field].trim() ||
       input[field].length > 32768
     ) {
-      throw new Error(
+      throw new ConfigError(
         `${field} must be a nonempty command string of at most 32768 characters`,
       );
     }
   }
   for (const field of ["polling", "strictState"]) {
     if (input[field] !== undefined && typeof input[field] !== "boolean")
-      throw new Error(`${field} must be a boolean`);
+      throw new ConfigError(`${field} must be a boolean`);
     result[field] = input[field] === true;
   }
   result.brightness = integer(input.brightness, 100, 0, 100, "brightness");
@@ -64,7 +69,7 @@ function normalizeSwitch(input) {
       typeof input[field] !== "string" &&
       typeof input[field] !== "number"
     ) {
-      throw new Error(`${field} must be a string or number`);
+      throw new ConfigError(`${field} must be a string or number`);
     }
     if (input[field] !== undefined) result[field] = String(input[field]);
   }
@@ -73,20 +78,22 @@ function normalizeSwitch(input) {
 
 function normalizePlatform(config = {}) {
   if (!config || typeof config !== "object" || Array.isArray(config))
-    throw new Error("Invalid platform configuration");
+    throw new ConfigError("Invalid platform configuration");
   const list = config.switches === undefined ? [] : config.switches;
   if (!Array.isArray(list) || list.length > 128)
-    throw new Error("switches must be an array of at most 128 switches");
+    throw new ConfigError("switches must be an array of at most 128 switches");
   const switches = list.map(normalizeSwitch);
   const names = new Set();
   for (const item of switches) {
     if (names.has(item.name))
-      throw new Error("Duplicate switch name; accessory names must be unique");
+      throw new ConfigError(
+        "Duplicate switch name; accessory names must be unique",
+      );
     names.add(item.name);
   }
   for (const field of ["synchronous", "noLogs"]) {
     if (config[field] !== undefined && typeof config[field] !== "boolean")
-      throw new Error(`${field} must be a boolean`);
+      throw new ConfigError(`${field} must be a boolean`);
   }
   return {
     ...config,
@@ -103,7 +110,7 @@ function normalizePlatform(config = {}) {
   };
 }
 
-module.exports = { integer, normalizeSwitch, normalizePlatform };
+module.exports = { ConfigError, integer, normalizeSwitch, normalizePlatform };
 
 window.CmdSwitchConfig = module.exports;
 })();

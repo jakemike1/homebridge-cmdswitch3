@@ -135,6 +135,12 @@ class CommandRunner {
       delete job.options;
       for (const stream of [job.child.stdout, job.child.stderr]) {
         let bytes = 0;
+        stream.on("error", () => {
+          this.stop(
+            job,
+            failure("OUTPUT_FAILED", "Unable to read command output"),
+          );
+        });
         stream.on("data", (chunk) => {
           bytes += chunk.length;
           if (

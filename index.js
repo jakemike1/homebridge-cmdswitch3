@@ -2,7 +2,7 @@
 // Modified 2026-10-21 from luisiam/homebridge-cmdswitch2, with maintained
 // command scheduling, validation and Homebridge 2 compatibility fixes.
 // Retains name-derived UUIDs and original Switch/Lightbulb service types.
-const { normalizePlatform, normalizeSwitch } = require("./config");
+const { ConfigError, normalizePlatform, normalizeSwitch } = require("./config");
 const { CommandRunner, failure } = require("./command-runner");
 const { SwitchController } = require("./switch-controller");
 const PLUGIN = "homebridge-cmdswitch3";
@@ -17,42 +17,114 @@ module.exports = function (homebridge) {
   class CmdSwitchPlatform {
     constructor(log, config, api) {
       this.log = log;
-      this.config = normalizePlatform(config || {});
-      this.switches = this.config.switches;
       this.api = api;
       this.accessories = Object.create(null);
       this.controllers = new Map();
       this.bindings = new Map();
       this.closed = false;
-      this.runner = new CommandRunner({
-        concurrency: this.config.synchronous
-          ? 1
-          : this.config.maxConcurrentCommands,
-      });
+      this.disabled = false;
+      this.launched = false;
+      this.configured = false;
+      this.config = normalizePlatform({});
+      this.switches = [];
       api.on("didFinishLaunching", () => this.didFinishLaunching());
       api.on("shutdown", () => this.dispose());
+      try {
+        this.config = normalizePlatform(config ?? {});
+        this.switches = this.config.switches;
+        // A missing list is not permission to remove restored accessories.
+        // An explicit empty list still permits intentional removal in Settings.
+        this.configured = Array.isArray(config?.switches);
+        if (this.configured)
+          this.runner = new CommandRunner({
+            concurrency: this.config.synchronous
+              ? 1
+              : this.config.maxConcurrentCommands,
+          });
+      } catch (error) {
+        this.disable(
+          error instanceof ConfigError
+            ? error.message
+            : "Invalid configuration",
+        );
+      }
+    }
+
+    logError(message) {
+      if (typeof this.log.error === "function") this.log.error(message);
+      else this.log(message);
+    }
+
+    stopWork() {
+      // Close the scheduler before releasing controller reservations, which
+      // could otherwise start queued commands while shutdown is in progress.
+      for (const worker of [this.runner, ...this.controllers.values()]) {
+        try {
+          worker?.dispose();
+        } catch {
+          this.logError(
+            "Could not finish command cleanup; restart this bridge.",
+          );
+        }
+      }
+    }
+
+    disable(reason) {
+      if (this.disabled) return;
+      this.disabled = true;
+      this.stopWork();
+      this.logError(
+        `cmdSwitch3 disabled: ${reason}. Cached accessories are retained. Correct the settings or cache issue, then restart this bridge.`,
+      );
+    }
+
+    guard(reason, action) {
+      try {
+        return action();
+      } catch {
+        // Unexpected errors can contain command text or credentials. Only log
+        // the fixed context supplied by the plugin, never raw error details.
+        this.disable(reason);
+      }
     }
 
     configureAccessory(accessory) {
-      const name = accessory.context.name;
-      if (typeof name !== "string" || Object.hasOwn(this.accessories, name)) {
-        throw new Error(
-          "Invalid or duplicate cached switch identity; automatic removal refused",
-        );
-      }
-      this.accessories[name] = accessory;
-      this.setService(accessory);
+      this.guard("Invalid cached accessory identity or services", () => {
+        const name = accessory.context?.name;
+        // Attach error-returning handlers even when startup is disabled, so a
+        // cached ON value is not mistaken for a successful command or live read.
+        this.setService(accessory);
+        if (
+          typeof name !== "string" ||
+          !name.trim() ||
+          name.length > 128 ||
+          accessory.UUID !== uuid.generate(name) ||
+          Object.hasOwn(this.accessories, name)
+        )
+          throw new Error("Invalid or duplicate cached switch identity");
+        this.accessories[name] = accessory;
+      });
     }
 
     didFinishLaunching() {
-      if (this.closed) return;
-      // Validate every existing type before registering or removing anything.
-      for (const data of this.switches) this.checkType(data);
-      for (const data of this.switches) this.addAccessory(data);
-      const configured = new Set(this.switches.map((data) => data.name));
-      for (const [name, accessory] of Object.entries(this.accessories)) {
-        if (!configured.has(name)) this.removeAccessory(accessory);
-      }
+      if (this.closed || this.disabled || !this.configured || this.launched)
+        return;
+      this.launched = true;
+      this.guard("Cached accessory type differs from configuration", () => {
+        // Validate every existing type before registering or removing anything.
+        for (const data of this.switches) this.checkType(data);
+      });
+      if (this.disabled) return;
+      this.guard("Accessory startup failed", () => {
+        for (const data of this.switches) {
+          this.addAccessory(data);
+          if (this.disabled) return;
+        }
+        const configured = new Set(this.switches.map((data) => data.name));
+        for (const [name, accessory] of Object.entries(this.accessories)) {
+          if (!configured.has(name)) this.removeAccessory(accessory);
+        }
+      });
     }
 
     routine(message) {
@@ -73,23 +145,28 @@ module.exports = function (homebridge) {
 
     setService(accessory) {
       if (this.bindings.has(accessory)) return;
-      const bulb = accessory.getService(Service.Lightbulb);
-      const service = bulb || accessory.getService(Service.Switch);
-      if (!service || (bulb && accessory.getService(Service.Switch)))
+      const services = accessory.services.filter((service) =>
+        [Service.Lightbulb.UUID, Service.Switch.UUID].includes(service.UUID),
+      );
+      if (services.length !== 1)
         throw new Error(
           "Cached accessory needs exactly one Switch or Lightbulb service; automatic replacement refused",
         );
+      const service = services[0];
+      const bulb = service.UUID === Service.Lightbulb.UUID;
       const characteristic = service.getCharacteristic(Characteristic.On);
       const get = () => this.handle(accessory.context, "get");
       const set = (value) => this.handle(accessory.context, "set", value);
       const identify = (_paired, callback) => {
-        this.routine(`${accessory.context.name}: identify requested.`);
+        this.routine(
+          `${accessory.context?.name ?? "Accessory"}: identify requested.`,
+        );
         callback();
       };
       characteristic.onGet(get).onSet(set);
       const handlers = [{ characteristic, get, set }];
       if (bulb) {
-        const characteristic = bulb.getCharacteristic(
+        const characteristic = service.getCharacteristic(
           Characteristic.Brightness,
         );
         const get = () => this.handle(accessory.context, "getBrightness");
@@ -113,7 +190,8 @@ module.exports = function (homebridge) {
     }
 
     addAccessory(input) {
-      if (this.closed) throw failure("CANCELLED", "Platform is closed");
+      if (this.closed || this.disabled || !this.configured)
+        throw failure("CANCELLED", "Platform is unavailable");
       const data = normalizeSwitch(input);
       this.checkType(data);
       let accessory = this.accessories[data.name];
@@ -157,15 +235,15 @@ module.exports = function (homebridge) {
         data,
         context,
         this.runner,
-        (value, level) => {
-          characteristic.updateValue(value);
-          if (brightness)
-            brightness.updateValue(value instanceof Error ? value : level);
-        },
+        (value, level) =>
+          this.guard("Could not update accessory state", () => {
+            characteristic.updateValue(value);
+            if (brightness)
+              brightness.updateValue(value instanceof Error ? value : level);
+          }),
         (code) => {
           const message = `${data.name}: command failed (${code}).`;
-          if (typeof this.log.error === "function") this.log.error(message);
-          else this.log(message);
+          this.logError(message);
         },
         (message) => this.routine(`${data.name}: ${message}.`),
       );
@@ -188,7 +266,7 @@ module.exports = function (homebridge) {
         `${data.name}: ${fresh ? "added" : "restored"} ${data.dim_cmd ? "dimmer" : "switch"}.`,
       );
       controller.publishState();
-      controller.start();
+      if (!this.disabled) controller.start();
       return accessory;
     }
 
@@ -204,14 +282,17 @@ module.exports = function (homebridge) {
     }
 
     async handle(context, method, value) {
-      const controller = this.controllers.get(context.name);
       try {
-        if (!controller)
+        const controller = this.controllers.get(context?.name);
+        if (this.closed || this.disabled || !this.configured || !controller)
           throw failure("UNAVAILABLE", "Accessory is unavailable");
-        return await controller[method](value);
+        const result = await controller[method](value);
+        if (this.closed || this.disabled)
+          throw failure("UNAVAILABLE", "Accessory is unavailable");
+        return result;
       } catch (error) {
         throw new HapStatusError(
-          error.code === "INVALID_VALUE"
+          error?.code === "INVALID_VALUE"
             ? HAPStatus.INVALID_VALUE_IN_REQUEST
             : HAPStatus.SERVICE_COMMUNICATION_FAILURE,
         );
@@ -221,10 +302,14 @@ module.exports = function (homebridge) {
     dispose() {
       if (this.closed) return;
       this.closed = true;
-      for (const controller of this.controllers.values()) controller.dispose();
-      for (const accessory of Object.values(this.accessories))
-        this.unbind(accessory);
-      this.runner.dispose();
+      this.stopWork();
+      for (const accessory of this.bindings.keys()) {
+        try {
+          this.unbind(accessory);
+        } catch {
+          this.logError("Could not remove accessory handlers during shutdown.");
+        }
+      }
     }
   }
 
