@@ -1,0 +1,67 @@
+<link rel="stylesheet" href="settings.css" />
+<main id="cmdswitch-settings" aria-label="cmdSwitch3 settings">
+  <header class="cs-heading">
+    <div>
+      <h1>Command switches</h1>
+      <p class="cs-muted">Switches and dimmers for Apple Home.</p>
+    </div>
+    <span class="cs-version">cmdSwitch3</span>
+  </header>
+  <nav class="cs-tabs" aria-label="Settings views">
+    <button
+      type="button"
+      id="accessories-tab"
+      class="cs-tab"
+      aria-pressed="true"
+    >
+      Accessories <span id="accessory-count" class="cs-count">0</span>
+    </button>
+    <button
+      type="button"
+      id="preferences-tab"
+      class="cs-tab"
+      aria-pressed="false"
+    >
+      Preferences
+    </button>
+  </nav>
+  <div id="settings-error" class="alert alert-danger" role="alert" hidden></div>
+  <div id="loading" role="status" class="cs-empty">Loading your settings…</div>
+  <section id="accessories-view" hidden>
+    <div class="cs-workspace">
+      <aside class="cs-sidebar" aria-label="Configured accessories">
+        <div class="cs-sidebar-heading">
+          <span>YOUR ACCESSORIES</span
+          ><button
+            type="button"
+            id="add-accessory"
+            class="btn btn-sm btn-outline-primary"
+          >
+            Add
+          </button>
+        </div>
+        <div id="accessory-list"></div>
+      </aside>
+      <section
+        id="accessory-editor"
+        class="cs-editor"
+        aria-label="Accessory editor"
+      ></section>
+    </div>
+  </section>
+  <section id="preferences-view" hidden>
+    <div class="cs-preferences">
+      <h2>Make it work your way</h2>
+      <p class="cs-muted">
+        These preferences apply to every accessory in this platform.
+      </p>
+      <form id="preferences-form" novalidate></form>
+    </div>
+  </section>
+  <footer class="cs-footer">
+    <span id="draft-status" role="status">Loading…</span
+    ><span>Homebridge 2</span>
+  </footer>
+</main>
+<script src="validation.js"></script>
+<script src="settings.js"></script>

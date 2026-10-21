@@ -1,90 +1,205 @@
 {
-  "pluginAlias": "cmdSwitch2",
+  "pluginAlias": "cmdSwitch3",
   "pluginType": "platform",
-  "footerDisplay": "For help please see the [README](https://github.com/luisiam/homebridge-cmdswitch2).",
+  "footerDisplay": "Commands run as the Homebridge service user. This beta does not automatically migrate cmdSwitch2 pairings.",
   "schema": {
-    "name": {
-      "title": "Name",
-      "type": "string",
-      "default": "homebridge-cmdswitch2",
-      "required": false
-    },
-    "switches": {
-      "type": "array",
-      "items": {
-        "title": "Switch Config",
-        "type": "object",
-        "properties": {
-          "name":{
-            "title": "Name",
-            "type": "string",
-            "required": true
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "Command Switches"
+      },
+      "switches": {
+        "type": "array",
+        "items": {
+          "title": "Switch or dimmer",
+          "type": "object",
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "\\S",
+              "description": "Keep the name unchanged to retain its HomeKit identity."
+            },
+            "on_cmd": {
+              "title": "On Command",
+              "type": "string",
+              "maxLength": 32768,
+              "description": "Switch ON action. For dimmers, ON uses the dimming command to restore the last nonzero level."
+            },
+            "off_cmd": {
+              "title": "Off Command",
+              "type": "string",
+              "maxLength": 32768,
+              "description": "OFF action. A dimmer without this command uses the dimming command with brightness 0."
+            },
+            "state_cmd": {
+              "title": "State Command",
+              "type": "string",
+              "maxLength": 32768,
+              "description": "Switch: exit 0 means ON, nonzero means OFF. Dimmer: exit 0 and print only a whole number from 0 to 100."
+            },
+            "polling": {
+              "title": "Polling?",
+              "type": "boolean",
+              "default": false,
+              "description": "Refresh state in the background. Polls never overlap."
+            },
+            "interval": {
+              "title": "Poll interval (s)",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 86400,
+              "default": 1,
+              "description": "Seconds to wait after the previous state check finishes."
+            },
+            "timeout": {
+              "title": "Post-command refresh delay (s)",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60,
+              "default": 1,
+              "description": "Delay before checking state after a completed action. This does not acknowledge unfinished commands."
+            },
+            "manufacturer": {
+              "title": "Manufacturer",
+              "type": "string"
+            },
+            "model": {
+              "title": "Model",
+              "type": "string"
+            },
+            "serial": {
+              "title": "Serial",
+              "type": "string"
+            },
+            "commandTimeout": {
+              "title": "Action deadline including queue time (s)",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8,
+              "default": 8,
+              "description": "Includes queue waiting. Failed and timed-out actions are reported to HomeKit."
+            },
+            "stateTimeout": {
+              "title": "State-check deadline including queue time (s)",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8,
+              "default": 5
+            },
+            "queueLimit": {
+              "title": "Maximum pending actions per switch",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64,
+              "default": 8
+            },
+            "strictState": {
+              "title": "Treat exit codes other than 0/1 as errors",
+              "type": "boolean",
+              "default": false
+            },
+            "dim_cmd": {
+              "title": "Dimming command (optional)",
+              "type": "string",
+              "maxLength": 32768,
+              "description": "Creates a lightbulb with brightness control. Read the requested percentage from $HB_BRIGHTNESS. Leave blank for a switch."
+            },
+            "brightness": {
+              "title": "Initial brightness (%)",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "default": 100,
+              "description": "Used only when no cached level exists. ON restores the last nonzero level, or 100 if none is known."
+            }
           },
-          "on_cmd":{
-            "title": "On Command",
-            "type": "string",
-            "required": false
-          },
-          "off_cmd":{
-            "title": "Off Command",
-            "type": "string",
-            "required": false
-          },
-          "state_cmd":{
-            "title": "State Command",
-            "type": "string",
-            "required": false
-          },
-          "polling":{
-            "title": "Polling?",
-            "type": "boolean",
-            "required": false
-          },
-          "interval":{
-            "title": "Poll interval (s)",
-            "type": "number",
-            "required": false
-          },
-          "timeout":{
-            "title": "Poll timout (s)",
-            "type": "number",
-            "required": false
-          },
-          "manufacturer":{
-            "title": "Manufacturer",
-            "type": "string",
-            "required": false
-          },
-          "model":{
-            "title": "Model",
-            "type": "string",
-            "required": false
-          },
-          "serial":{
-            "title": "Serial",
-            "type": "string",
-            "required": false
-          }
-        }
+          "required": ["name"]
+        },
+        "maxItems": 128
+      },
+      "maxConcurrentCommands": {
+        "title": "Maximum concurrent commands",
+        "type": "integer",
+        "default": 4,
+        "minimum": 1,
+        "maximum": 16,
+        "description": "Used when sequential execution is off. Commands for one accessory are always serialized."
+      },
+      "noLogs": {
+        "title": "No logs (routine messages)",
+        "type": "boolean",
+        "default": false,
+        "description": "Optional: suppress startup, identify, state-change and successful-action messages. Errors remain visible; command text and output are never logged."
+      },
+      "synchronous": {
+        "title": "Run commands sequentially",
+        "type": "boolean",
+        "default": false,
+        "description": "Run one command at a time across this platform, including switches, dimmers and state checks. Queue waiting counts toward each deadline."
       }
     }
   },
   "form": [
     "name",
+    "noLogs",
+    "synchronous",
     {
-      "key":"switches",
-      "items":[
+      "key": "maxConcurrentCommands",
+      "condition": {
+        "functionBody": "return model.synchronous !== true;"
+      }
+    },
+    {
+      "key": "switches",
+      "type": "array",
+      "items": [
         "switches[].name",
         "switches[].on_cmd",
         "switches[].off_cmd",
+        "switches[].dim_cmd",
+        {
+          "key": "switches[].brightness",
+          "condition": {
+            "functionBody": "return !!(model.switches && model.switches[arrayIndices[0]] && model.switches[arrayIndices[0]].dim_cmd);"
+          }
+        },
         "switches[].state_cmd",
         "switches[].polling",
         "switches[].interval",
-        "switches[].timeout",
-        "switches[].manufacturer",
-        "switches[].model",
-        "switches[].serial"
+        {
+          "type": "fieldset",
+          "title": "Advanced command settings",
+          "expandable": true,
+          "expanded": false,
+          "items": [
+            "switches[].timeout",
+            "switches[].commandTimeout",
+            "switches[].stateTimeout",
+            "switches[].queueLimit",
+            "switches[].strictState"
+          ]
+        },
+        {
+          "type": "fieldset",
+          "title": "Accessory information",
+          "expandable": true,
+          "expanded": false,
+          "items": [
+            "switches[].manufacturer",
+            "switches[].model",
+            "switches[].serial"
+          ]
+        }
       ]
     }
-  ]
+  ],
+  "singular": true,
+  "strictValidation": true,
+  "headerDisplay": "Configure command switches and dimmers. Keep existing accessory names and types when restoring a cache.",
+  "customUi": true
 }

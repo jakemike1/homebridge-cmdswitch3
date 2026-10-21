@@ -1,0 +1,21 @@
+homebridge-cmdswitch3
+
+Derived from homebridge-cmdswitch2 by Luis Iam and contributors.
+Original: https://github.com/luisiam/homebridge-cmdswitch2
+Source baseline: c3b293e569053ea427f84ab01bc66e190ef905c7
+
+This distribution retains the original Apache License, Version 2.0, in LICENSE.
+The original package metadata historically declared ISC alongside that licence;
+this successor declares Apache-2.0 to match the retained licence file.
+
+Modified on 2026-10-21 for the cmdSwitch3 maintenance project:
+- Retained original dimming, shell-command options and sequential execution.
+- Ported maintained validation, bounded scheduling, polling, action error,
+  stale-state, cache-identity and shutdown fixes from the local
+  homebridge-cmdswitch2-no-logs 0.5.1-maintenance.1 work.
+- Acknowledge normen's settings-schema work and joepool's no-logs/Homebridge 2
+  lineage. Quiet logging is now opt-in; the settings UI is newly implemented.
+- Added Homebridge 2-only promise handlers, dimmer fixes, tests and documentation.
+- Removed Homebridge 1 compatibility and the old configuration wizard/ExecQueue.
+
+No endorsement by the original authors or downstream maintainers is implied.
