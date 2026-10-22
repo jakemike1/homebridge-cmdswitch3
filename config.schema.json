@@ -1,7 +1,7 @@
 {
   "pluginAlias": "cmdSwitch3",
   "pluginType": "platform",
-  "footerDisplay": "Commands run as the Homebridge service user. This beta does not automatically migrate cmdSwitch2 pairings.",
+  "footerDisplay": "Local shell and SSH commands run as the Homebridge service user and use that account's SSH setup. This beta does not automatically migrate cmdSwitch2 pairings.",
   "schema": {
     "type": "object",
     "properties": {
@@ -28,19 +28,19 @@
               "title": "On Command",
               "type": "string",
               "maxLength": 32768,
-              "description": "Switch ON action. For dimmers, ON uses the dimming command to restore the last nonzero level."
+              "description": "Local shell or SSH action, for example: ssh -n homebridge-device /usr/local/bin/device-power on. Exit 0 only on success. For dimmers, ON uses the dimming command."
             },
             "off_cmd": {
               "title": "Off Command",
               "type": "string",
               "maxLength": 32768,
-              "description": "OFF action. A dimmer without this command uses the dimming command with brightness 0."
+              "description": "Local shell or SSH OFF action. For a momentary switch, leave OFF and state commands empty. A dimmer without OFF uses its dimming command with brightness 0."
             },
             "state_cmd": {
               "title": "State Command",
               "type": "string",
               "maxLength": 32768,
-              "description": "Switch: exit 0 means ON, nonzero means OFF. Dimmer: exit 0 and print only a whole number from 0 to 100."
+              "description": "Switch: exit 0 means ON; nonzero means OFF by default. For SSH, reserve exit 1 for OFF and enable strictState to report other failures. Dimmer: exit 0 and print an integer 0–100. See the README for a status helper."
             },
             "polling": {
               "title": "Polling?",
@@ -101,13 +101,14 @@
             "strictState": {
               "title": "Treat exit codes other than 0/1 as errors",
               "type": "boolean",
-              "default": false
+              "default": false,
+              "description": "Recommended for SSH status helpers: reserve exit 1 for confirmed OFF. Other nonzero codes, including SSH error 255, report a failure and retain the previous state. This does not change action-command success rules."
             },
             "dim_cmd": {
               "title": "Dimming command (optional)",
               "type": "string",
               "maxLength": 32768,
-              "description": "Creates a lightbulb with brightness control. Read the requested percentage from $HB_BRIGHTNESS. Leave blank for a switch."
+              "description": "Creates a dimmable light. Run a local script or SSH command with $HB_BRIGHTNESS; for example: ssh -n homebridge-device \"/usr/local/bin/lamp dim $HB_BRIGHTNESS\". The local shell expands the percentage. Leave blank for a switch."
             },
             "brightness": {
               "title": "Initial brightness (%)",
@@ -200,6 +201,6 @@
   ],
   "singular": true,
   "strictValidation": true,
-  "headerDisplay": "Configure command switches and dimmers. Keep existing accessory names and types when restoring a cache.",
+  "headerDisplay": "Control switches and dimmers with local shell or remote SSH commands. See the README for SSH setup and status examples. Keep existing names and types when restoring a cache.",
   "customUi": true
 }

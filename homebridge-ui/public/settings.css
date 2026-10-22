@@ -234,6 +234,11 @@
 .cs-details > div {
   padding: 0 0 5px;
 }
+#cmdswitch-settings .cs-details > div > p.cs-help {
+  margin: 0 0 10px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
 .cs-preferences {
   padding: 4px 8px 20px;
   max-width: 650px;

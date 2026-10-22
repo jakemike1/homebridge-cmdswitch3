@@ -75,6 +75,12 @@ Run `npm run build`, `npm run format:check` and `npm run test:package`. The last
 
 Beta.4 changes npm search metadata and release documentation only. Its runtime, settings UI, configuration schema and dependencies are identical to beta.3. CI covers Linux x64, Linux ARM64 and macOS on Node 22, 24 and 26; see the exact release commit's results linked from its GitHub prerelease. No beta.4 deployment to the maintainer's Pi has been performed.
 
+### Beta.5
+
+Beta.5 adds SSH documentation, settings help and discovery metadata. The runtime modules, schema validation/defaults and dependencies are unchanged from beta.4. All 77 tests and the packed-install check pass locally on Node 26/macOS ARM64. CI runs the same checks across Linux x64, native Linux ARM64 and macOS on Node 22, 24 and 26; see the exact release commit's results linked from its GitHub prerelease.
+
+The three README JSON examples pass schema/runtime validation, four shell examples parse, and eight mocked status-helper cases cover ON, OFF, unknown/empty output and command failures. The expanded help was checked in desktop light, narrow light and narrow dark layouts with a synthetic settings host. No remote SSH commands or device actions were executed, and beta.5 has not been deployed to the maintainer's Pi. Test your SSH alias, key permissions and remote status convention as the Homebridge service account before configuring real actions.
+
 ## Stable release criteria
 
 Aim for at least two weeks of normal use on the final candidate, successful switch/dimmer/sequential tests on more than one installation, and no unresolved pairing, command-failure or state-consistency regressions. Fixes affecting runtime behaviour need a further observation period. Calendar time alone is not a release criterion.

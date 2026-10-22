@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0-beta.5 — SSH documentation and settings help
+
+- Highlight local shell and remote SSH commands in the package description, README and settings help; add `ssh`, `openssh`, `ssh-switch`, `ssh-commands`, `remote-control` and `shell-command` discovery keywords.
+- Document service-account SSH setup, remote switches, momentary actions and dimmers, with explicit OFF/error status mapping and opt-in strict checks.
+- Add a collapsible SSH help section to the settings page, with switch/dimmer examples and clearer strict-state guidance.
+- Keep runtime behaviour, configuration defaults, accessory identities and dependencies unchanged from beta.4. SSH still uses the host's existing client and credentials; strict state handling remains opt-in.
+
+This remains a public beta awaiting Homebridge verification. npm's `latest` and `beta` tags select the same prerelease. Search indexing and ranking are controlled by npm.
+
 ## 1.0.0-beta.4 — search metadata
 
 - Add explicit `cmdswitch`, `cmdswitch2`, `cmdswitch3`, `command-switch` and `shell` search keywords while retaining `homebridge-plugin` and `supports-hap`.

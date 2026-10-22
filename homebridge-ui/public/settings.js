@@ -254,7 +254,7 @@
         field(item, "dim_cmd", definitions.dim_cmd, {
           command: true,
           title: "Dimming command",
-          help: "Read the requested percentage from $HB_BRIGHTNESS. ON restores the last nonzero level.",
+          help: "Run a local script or SSH command with $HB_BRIGHTNESS. ON restores the last nonzero level.",
         }),
       );
     else
@@ -262,7 +262,7 @@
         field(item, "on_cmd", definitions.on_cmd, {
           command: true,
           title: "Turn on",
-          help: "Command to run when this switch turns on.",
+          help: "Local shell or SSH command. Exit 0 only when the ON action succeeds.",
         }),
       );
     form.append(
@@ -271,17 +271,48 @@
         title: "Turn off",
         help: dimmer
           ? "Optional. When empty, the dimming command runs with brightness 0."
-          : "Command to run when this switch turns off.",
+          : "Local shell or SSH command. For a momentary action, leave OFF and state commands empty.",
       }),
     );
     form.append(
+      disclosure("SSH examples & status", [
+        element(
+          "p",
+          "Configure SSH for the Homebridge service account, including its host alias, key and verified known_hosts entry. Use BatchMode yes and StrictHostKeyChecking yes for unattended commands.",
+          "cs-help",
+        ),
+        element(
+          "p",
+          dimmer
+            ? 'Dimmer example: ssh -n homebridge-device "/usr/local/bin/lamp dim $HB_BRIGHTNESS"'
+            : "ON example: ssh -n homebridge-device /usr/local/bin/device-power on",
+          "cs-help",
+        ),
+        element(
+          "p",
+          dimmer
+            ? "The local shell expands $HB_BRIGHTNESS. The remote brightness check must exit 0 and print an integer 0–100, where 0 means OFF. Return an error code greater than 1 when the level is unknown."
+            : "Use device-power off for OFF. For Check state, use ssh -n homebridge-device /usr/local/bin/device-power-state. The helper must exit 0 for ON, 1 for OFF and 2 or greater for an error.",
+          "cs-help",
+        ),
+        element(
+          "p",
+          "Enable Advanced → Strict state checks for that status contract. SSH errors normally exit 255; strict checks report them as failures and retain the last known state. A helper error returned as 1 would still mean OFF.",
+          "cs-help",
+        ),
+        element(
+          "p",
+          "These hosts and scripts are placeholders to adapt. Actions must return 0 only on success. Preserve failure codes with && when chaining commands. See the README for setup, status-helper and momentary-action examples; opening this help runs no commands.",
+          "cs-help",
+        ),
+      ]),
       disclosure("State & polling", [
         field(item, "state_cmd", definitions.state_cmd, {
           command: true,
           title: "Check state",
           help: dimmer
-            ? "Print a whole number from 0 to 100 and exit 0. Zero means off."
-            : "Exit 0 means on; nonzero means off. Leave empty to use the last successful action.",
+            ? "Print an integer 0–100 and exit 0. Zero means off. For SSH errors, see Strict state checks in Advanced."
+            : "Exit 0 means ON; nonzero means OFF by default. For SSH, use 1 only for confirmed OFF and enable Strict state checks in Advanced. Leave empty to use the last successful action.",
         }),
         toggle(
           item,
@@ -312,7 +343,7 @@
         item,
         "strictState",
         "Strict state checks",
-        "Treat exit codes other than 0 or 1 as errors instead of OFF.",
+        "Recommended for SSH status helpers: 0 means ON (or a dimmer reading), 1 means OFF, other codes mean error. Failures retain the previous state. Your helper must reserve exit 1 for confirmed OFF.",
       ),
     );
     form.append(

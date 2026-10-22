@@ -2,11 +2,11 @@
 
 ![cmdSwitch3 icon](https://raw.githubusercontent.com/jakemike1/homebridge-cmdswitch3/master/docs/icon.png)
 
-Command switches and dimmable lights for **Homebridge 2**. A maintained successor built from [luisiam/homebridge-cmdswitch2](https://github.com/luisiam/homebridge-cmdswitch2), with a tidy settings page, optional quiet logging and bounded command execution.
+Run **local shell commands or remote commands over SSH** from switches and dimmable lights in Apple Home. Built for **Homebridge 2**, cmdSwitch3 is a maintained successor to [luisiam/homebridge-cmdswitch2](https://github.com/luisiam/homebridge-cmdswitch2), with a tidy settings page, optional quiet logging and bounded command execution. See the [SSH setup and examples](#remote-commands-over-ssh) for remote switches, status checks and momentary actions.
 
-**Public beta: 1.0.0-beta.4.** Testers are welcome. Start with a fresh or isolated installation and follow [TESTING.md](TESTING.md). Existing cmdSwitch2 installations need a deliberate migration: read [MIGRATION.md](MIGRATION.md) before changing anything.
+**Public beta: 1.0.0-beta.5.** Testers are welcome. Start with a fresh or isolated installation and follow [TESTING.md](TESTING.md). Existing cmdSwitch2 installations need a deliberate migration: read [MIGRATION.md](MIGRATION.md) before changing anything.
 
-Beta.4 improves search metadata and documentation; its runtime and settings UI are unchanged from beta.3, which hardened startup, cached-accessory handling and command cleanup. See [CHANGELOG.md](CHANGELOG.md). cmdSwitch3 has not been verified by the Homebridge team.
+Beta.5 adds SSH setup examples, clearer status/error guidance, settings help and SSH search keywords. Runtime behaviour and configuration defaults are unchanged from beta.4. See [CHANGELOG.md](CHANGELOG.md). cmdSwitch3 has not been verified by the Homebridge team.
 
 ## Install the beta
 
@@ -27,6 +27,7 @@ The explicit `@beta` tag selects the testing release. This is not a stable relea
 ## What is included
 
 - Original switches, momentary switches, dimming through `dim_cmd` and `$HB_BRIGHTNESS`, and `synchronous` sequential execution.
+- Remote control through your system's SSH client, using commands or scripts and the Homebridge service account's SSH configuration. Each command can target a different host.
 - A custom Homebridge settings page: accessory list, command editor, collapsible state/advanced settings, and a Preferences view. It follows Homebridge's theme and adapts to narrow screens.
 - **No logs**, off by default, silences routine initialization, identification, state-change and successful-action messages. Errors remain visible. Command text, stdout and stderr are never logged.
 - Real execution deadlines, bounded queues, shared state reads, completion-based polling, stale-result protection and shutdown cleanup.
@@ -38,11 +39,15 @@ The explicit `@beta` tag selects the testing release. This is not a stable relea
 
 Homebridge 2.x, Node 22, 24 or 26, and Linux or macOS. Use a Node version supported by your Homebridge installation. Windows and Homebridge 1 are unsupported.
 
-Beta.3 passed 77 automated tests and an offline packed-install check on each of Node 22.23.3, 24.19.0 and 26.0.0 on macOS, against Homebridge 2.4.0 / HAP-NodeJS 2.2.2. CI covers Linux x64, Linux ARM64 and macOS on all three Node majors. An earlier Raspberry Pi migration using the private beta.1 runtime retained six switches' HomeKit identities and pairing data, with all 42 readable characteristics passing. That installation has not been updated to beta.3 or beta.4. Physical dimming and controller-side automation execution still need broader testing. [Testing coverage and limitations](TESTING.md#what-has-been-tested) explain the evidence.
+For remote commands, the Homebridge host also needs an SSH client and non-interactive access to the target machine. Configure SSH authentication outside the plugin; cmdSwitch3 uses your existing SSH setup and has no dedicated credential fields or connection manager.
+
+Beta.3 passed 77 automated tests and an offline packed-install check on each of Node 22.23.3, 24.19.0 and 26.0.0 on macOS, against Homebridge 2.4.0 / HAP-NodeJS 2.2.2. CI covers Linux x64, Linux ARM64 and macOS on all three Node majors. An earlier Raspberry Pi migration using the private beta.1 runtime retained six switches' HomeKit identities and pairing data, with all 42 readable characteristics passing. That installation remains on beta.1. Physical dimming and controller-side automation execution still need broader testing. [Testing coverage and limitations](TESTING.md#what-has-been-tested) explain the evidence.
 
 ## Settings
 
 Open the plugin's **Settings** page in Homebridge UI. Add an accessory, choose **Switch** or **Dimmable light**, and enter its commands. Use **Preferences** for No logs and Sequential commands. Edits update Homebridge's draft; the normal host **Save** button persists them. Restart the affected child bridge to apply changes.
+
+The command fields accept local scripts or `ssh` commands. Expand **SSH examples & status** for setup guidance. For an SSH state command that follows the exit-code contract below, enable **Advanced → Strict state checks** so connection errors retain the previous state and are reported as failures. This is opt-in; existing settings and defaults stay unchanged.
 
 Existing accessory names and types are locked in the custom editor to preserve their identities. Rename their visible tiles in Apple Home. Removing an accessory requires a confirmation in the editor. The runtime refuses to silently replace a cached switch with a lightbulb or vice versa.
 
@@ -118,6 +123,107 @@ For a dimmer, a successful `state_cmd` must print only an integer **0–100**, w
 A brightness write runs `dim_cmd` with `HB_BRIGHTNESS` set to the requested percentage. ON restores the last successful nonzero level using `dim_cmd`; it does not run `on_cmd`. OFF runs `off_cmd` if configured, otherwise `dim_cmd` with level 0. OFF preserves the remembered level for the next ON. Fresh dimmers default to 100%; a configured initial level is used only when no valid cached brightness exists. An initial zero has a 100% ON fallback.
 
 For a switch with one action and no state command, the opposite direction is a passive reset. After a successful action it resets after one second without executing an undefined command. Dimmers do not momentarily reset. A missing action on a state-backed switch is reported as an error.
+
+### Remote commands over SSH
+
+All hosts, accounts and script paths below are examples to adapt. The scripts are not bundled, and pasting an example does not install them. An SSH command runs on the remote machine with the remote account's permissions; the SSH client runs locally as the Homebridge service user.
+
+#### Set up the Homebridge account
+
+Configure a host alias in the **Homebridge service account's** `~/.ssh/config`, using that account's actual home directory. A successful login from your personal terminal does not establish that Homebridge can connect. For example:
+
+```sshconfig
+Host homebridge-device
+    HostName 192.0.2.20
+    User device-control
+    Port 22
+    IdentityFile ~/.ssh/cmdswitch3_ed25519
+    IdentitiesOnly yes
+    BatchMode yes
+    StrictHostKeyChecking yes
+    ConnectTimeout 3
+```
+
+Replace the example address, account and key path. Install the public key on the target, keep the private key accessible only to the service account, and add the host key to that account's `known_hosts` after verifying its fingerprint through a trusted route. An encrypted key needs an agent available to the running Homebridge service; it cannot wait for a passphrase prompt.
+
+`BatchMode yes` prevents interactive authentication prompts, and `StrictHostKeyChecking yes` requires a trusted host key. `ConnectTimeout` bounds connection establishment; cmdSwitch3's action/state deadline still covers the entire local command, including queue time. See the [OpenSSH configuration reference](https://man.openbsd.org/ssh_config.5).
+
+#### Remote on/off switch
+
+Add this accessory to your existing `switches` list. The action scripts must exit 0 only when successful. The state helper must follow the status contract in the next section.
+
+```json
+{
+  "name": "Remote desk power",
+  "on_cmd": "ssh -n homebridge-device /usr/local/bin/device-power on",
+  "off_cmd": "ssh -n homebridge-device /usr/local/bin/device-power off",
+  "state_cmd": "ssh -n homebridge-device /usr/local/bin/device-power-state",
+  "strictState": true,
+  "polling": true,
+  "interval": 10,
+  "commandTimeout": 8,
+  "stateTimeout": 5
+}
+```
+
+`-n` keeps SSH from waiting for input on stdin. Use another SSH alias in a command to control another machine. Set up and check each alias under the same service account.
+
+#### Keep OFF distinct from a failed status check
+
+With `strictState: true`, use this contract for a switch's **state command**:
+
+| Exit status | Meaning                                       | cmdSwitch3 result                          |
+| ----------- | --------------------------------------------- | ------------------------------------------ |
+| `0`         | Confirmed ON                                  | Publish ON                                 |
+| `1`         | Confirmed OFF                                 | Publish OFF                                |
+| `2`–`254`   | Status unavailable or remote command failed   | Report an error; retain the previous state |
+| `255`       | SSH error, or the remote command returned 255 | Report an error; retain the previous state |
+
+[OpenSSH returns the remote command's exit status, or 255 for an SSH error](https://man.openbsd.org/ssh.1#EXIT_STATUS). Without strict checks, a nonzero exit is treated as OFF for compatibility. Strict checks cannot distinguish an actual error returned as `1` from a confirmed OFF result, so adapt your remote status command accordingly. A retained value is the last known state, not a fresh confirmation that the device is reachable.
+
+For a device utility that successfully prints `on` or `off` and returns nonzero on failure, this example remote `/usr/local/bin/device-power-state` helper maps output and errors explicitly:
+
+```sh
+#!/bin/sh
+device_status=$(/usr/local/bin/device-power status-text) || exit 2
+case "$device_status" in
+    on)  exit 0 ;;
+    off) exit 1 ;;
+    *)   exit 2 ;;
+esac
+```
+
+Adapt the utility and expected output to your device, and make the helper executable on the remote host. For example, a failed utility call that exits 1 becomes error 2, rather than a false OFF. Switch state checks use exit codes, not the words printed to stdout. ON/OFF **actions** always require exit 0; `strictState` affects only state checks.
+
+Preserve failures all the way back to Homebridge. Avoid `ssh ...; true`, `ssh ... || exit 1`, or pipelines that discard SSH's exit status. Use `first-command && second-command` when the second action depends on the first succeeding. A timeout or disconnect may leave a remote action's outcome unknown; check its actual state before retrying.
+
+#### Momentary action and dimmer examples
+
+A one-shot action needs only an ON command. Leave OFF and state commands empty to use the existing one-second passive reset after success:
+
+```json
+{
+  "name": "Remote refresh",
+  "on_cmd": "ssh -n homebridge-device /usr/local/bin/device-refresh"
+}
+```
+
+The remote action should return promptly with its real result. The reset only changes the HomeKit switch; it does not send a second SSH command.
+
+For a dimmer, a command such as `ssh -n homebridge-device "/usr/local/bin/lamp dim $HB_BRIGHTNESS"` passes the requested number to the remote script. The local shell expands `$HB_BRIGHTNESS`. Its state command must exit 0 and print only an integer 0–100; use 0 for OFF. Enable strict checks and return an error code greater than 1 when brightness cannot be read.
+
+#### Check the setup
+
+Before enabling polling, run a harmless command and the status helper as the actual Homebridge service account. On a host where that account is named `homebridge`, these examples check access and display the status exit code:
+
+```sh
+sudo -u homebridge -H ssh -n homebridge-device /usr/bin/true
+sudo -u homebridge -H ssh -n homebridge-device /usr/local/bin/device-power-state
+state_exit=$?
+printf 'State exit: %s\n' "$state_exit"
+```
+
+Use the account and home directory your service actually uses. If access works in your terminal but fails in Homebridge, check its SSH alias, readable key, trusted host key and agent availability. Run the status command manually as that account to inspect errors; cmdSwitch3 intentionally omits command text, stdout and stderr from its logs, even when routine logging is enabled. Neither editing settings nor opening the SSH help runs these examples.
 
 ### Timing and ordering
 
