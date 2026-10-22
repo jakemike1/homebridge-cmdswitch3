@@ -1,7 +1,7 @@
 {
   "name": "homebridge-cmdswitch3",
-  "version": "1.0.0-beta.3",
-  "description": "Command switches and dimmers for Homebridge with bounded sequential execution and optional quiet logging.",
+  "version": "1.0.0-beta.4",
+  "description": "Maintained cmdSwitch2 successor for Homebridge 2, with command switches, dimmers, sequential commands and optional quiet logging.",
   "main": "index.js",
   "license": "Apache-2.0",
   "author": "Luis Iam",
@@ -13,6 +13,11 @@
   ],
   "keywords": [
     "homebridge-plugin",
+    "cmdswitch",
+    "cmdswitch2",
+    "cmdswitch3",
+    "command-switch",
+    "shell",
     "switch",
     "dimmer",
     "supports-hap"

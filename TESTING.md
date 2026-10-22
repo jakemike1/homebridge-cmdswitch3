@@ -71,6 +71,10 @@ The verification-readiness changes add regression coverage for malformed configu
 
 Run `npm run build`, `npm run format:check` and `npm run test:package`. The last check installs the exact tarball offline into a disposable directory, checks its bytes and absence of install hooks/runtime dependencies, and tests real Homebridge API startup and harmless HAP writes without advertising a bridge. CI runs it on both supported operating systems. Check the exact release commit's [CI results](https://github.com/jakemike1/homebridge-cmdswitch3/actions) alongside the release notes; local macOS results alone do not establish Linux compatibility.
 
+### Beta.4
+
+Beta.4 changes npm search metadata and release documentation only. Its runtime, settings UI, configuration schema and dependencies are identical to beta.3. CI covers Linux x64, Linux ARM64 and macOS on Node 22, 24 and 26; see the exact release commit's results linked from its GitHub prerelease. No beta.4 deployment to the maintainer's Pi has been performed.
+
 ## Stable release criteria
 
 Aim for at least two weeks of normal use on the final candidate, successful switch/dimmer/sequential tests on more than one installation, and no unresolved pairing, command-failure or state-consistency regressions. Fixes affecting runtime behaviour need a further observation period. Calendar time alone is not a release criterion.

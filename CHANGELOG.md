@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0-beta.4 — search metadata
+
+- Add explicit `cmdswitch`, `cmdswitch2`, `cmdswitch3`, `command-switch` and `shell` search keywords while retaining `homebridge-plugin` and `supports-hap`.
+- Describe the plugin as a maintained cmdSwitch2 successor for Homebridge 2, with switches, dimmers, sequential commands and optional quiet logging.
+- Include the approved icon in the README and document the full-name search route in Homebridge UI.
+- Keep the runtime, settings UI, configuration schema and dependencies unchanged from beta.3. CI covers Linux x64, Linux ARM64 and macOS on Node 22, 24 and 26.
+
+This remains a public beta awaiting Homebridge verification. Search indexing and ranking are controlled by npm and may take time to reflect the new metadata.
+
 ## 1.0.0-beta.3 — startup and cleanup hardening
 
 - Contain invalid configuration, malformed cached accessories and unexpected startup/state-publication errors. Log a sanitized diagnostic, stop the affected platform and retain cached accessories instead of throwing through Homebridge lifecycle events.

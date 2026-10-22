@@ -4,11 +4,13 @@
 
 Command switches and dimmable lights for **Homebridge 2**. A maintained successor built from [luisiam/homebridge-cmdswitch2](https://github.com/luisiam/homebridge-cmdswitch2), with a tidy settings page, optional quiet logging and bounded command execution.
 
-**Public beta: 1.0.0-beta.3.** Testers are welcome. Start with a fresh or isolated installation and follow [TESTING.md](TESTING.md). Existing cmdSwitch2 installations need a deliberate migration: read [MIGRATION.md](MIGRATION.md) before changing anything.
+**Public beta: 1.0.0-beta.4.** Testers are welcome. Start with a fresh or isolated installation and follow [TESTING.md](TESTING.md). Existing cmdSwitch2 installations need a deliberate migration: read [MIGRATION.md](MIGRATION.md) before changing anything.
 
-Beta.3 hardens startup, cached-accessory handling and command cleanup; see [CHANGELOG.md](CHANGELOG.md). cmdSwitch3 has not been verified by the Homebridge team.
+Beta.4 improves search metadata and documentation; its runtime and settings UI are unchanged from beta.3, which hardened startup, cached-accessory handling and command cleanup. See [CHANGELOG.md](CHANGELOG.md). cmdSwitch3 has not been verified by the Homebridge team.
 
 ## Install the beta
+
+In Homebridge UI's Plugins search, enter the full package name **`homebridge-cmdswitch3`**. This uses a direct package lookup if a broad search such as `cmdswitch` does not return it yet.
 
 From your Homebridge terminal, using the same npm installation/prefix as your existing plugins:
 
@@ -18,7 +20,7 @@ npm install -g homebridge-cmdswitch3@beta
 
 The explicit `@beta` tag selects the testing release. This is not a stable release and does not automatically replace cmdSwitch2. Restart Homebridge after the first installation so it discovers the new plugin. Configure **cmdSwitch3** in Homebridge UI, preferably on its own child bridge for a fresh setup.
 
-**npm tag note:** npm automatically added `latest` to this package's first release despite publishing with `--tag beta`, and rejected removing it with HTTP 400. An unqualified install can therefore select a beta version, and may lag behind `@beta`. Use the explicit `@beta` tag for the current testing release. The `latest` tag does not mean a stable 1.0.0 has been released. See [npm/cli#8490](https://github.com/npm/cli/issues/8490) for the reported registry behaviour.
+**npm tag note:** `latest` and `beta` are kept aligned so Homebridge's package lookup and verification checks select the current public beta. An unqualified install therefore selects a prerelease too. Use the explicit `@beta` tag to make your testing intent clear; no stable 1.0.0 has been released.
 
 [Report a bug or share test results](https://github.com/jakemike1/homebridge-cmdswitch3/issues/new/choose) · [Release notes](CHANGELOG.md)
 
@@ -36,7 +38,7 @@ The explicit `@beta` tag selects the testing release. This is not a stable relea
 
 Homebridge 2.x, Node 22, 24 or 26, and Linux or macOS. Use a Node version supported by your Homebridge installation. Windows and Homebridge 1 are unsupported.
 
-Beta.3 passed 77 automated tests and an offline packed-install check on each of Node 22.23.3, 24.19.0 and 26.0.0 on macOS, against Homebridge 2.4.0 / HAP-NodeJS 2.2.2. CI covers Linux and macOS on all three Node majors. An earlier Raspberry Pi migration using the private beta.1 runtime retained six switches' HomeKit identities and pairing data, with all 42 readable characteristics passing. That installation has not been updated to beta.3. Physical dimming and controller-side automation execution still need broader testing. [Testing coverage and limitations](TESTING.md#what-has-been-tested) explain the evidence.
+Beta.3 passed 77 automated tests and an offline packed-install check on each of Node 22.23.3, 24.19.0 and 26.0.0 on macOS, against Homebridge 2.4.0 / HAP-NodeJS 2.2.2. CI covers Linux x64, Linux ARM64 and macOS on all three Node majors. An earlier Raspberry Pi migration using the private beta.1 runtime retained six switches' HomeKit identities and pairing data, with all 42 readable characteristics passing. That installation has not been updated to beta.3 or beta.4. Physical dimming and controller-side automation execution still need broader testing. [Testing coverage and limitations](TESTING.md#what-has-been-tested) explain the evidence.
 
 ## Settings
 
