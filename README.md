@@ -1,5 +1,7 @@
 # homebridge-cmdswitch3
 
+![cmdSwitch3 icon](https://raw.githubusercontent.com/jakemike1/homebridge-cmdswitch3/master/docs/icon.png)
+
 Command switches and dimmable lights for **Homebridge 2**. A maintained successor built from [luisiam/homebridge-cmdswitch2](https://github.com/luisiam/homebridge-cmdswitch2), with a tidy settings page, optional quiet logging and bounded command execution.
 
 **Public beta: 1.0.0-beta.3.** Testers are welcome. Start with a fresh or isolated installation and follow [TESTING.md](TESTING.md). Existing cmdSwitch2 installations need a deliberate migration: read [MIGRATION.md](MIGRATION.md) before changing anything.
