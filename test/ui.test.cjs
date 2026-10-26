@@ -72,6 +72,7 @@ test("schema and runtime agree on new defaults, bounds and command options", () 
   const validate = new Ajv({ strict: false }).compile(schema.schema);
   assert.equal(schema.customUi, true);
   assert.equal(schema.pluginAlias, "cmdSwitch3");
+  assert.equal(schema.schema.properties.name.default, "cmdSwitch3");
   assert.equal(schema.schema.properties.noLogs.default, false);
   const good = {
     noLogs: true,
@@ -149,6 +150,7 @@ test("adding a dimmer requires a name and dimming command; valid configuration r
   f.input("field-accessory-dim_cmd", 'lamp "$HB_BRIGHTNESS"');
   await turn();
   assert.equal(f.state.enabled, true);
+  assert.equal(f.state.updates.at(-1)[0].name, "cmdSwitch3");
   assert.deepEqual(f.state.updates.at(-1)[0].switches, [
     { name: "New light", dim_cmd: 'lamp "$HB_BRIGHTNESS"' },
   ]);
@@ -222,4 +224,25 @@ test("config values are rendered as text and multiple platform blocks are preser
   f.input("toggle-noLogs", true, "change");
   await turn();
   assert.deepEqual(f.state.updates.at(-1)[1], data[1]);
+});
+
+test("editing the existing advanced platform name preserves accessory identities and other platforms", async (t) => {
+  const configuration = structuredClone(initial);
+  configuration[0].name = "homebridge-cmdswitch2";
+  configuration.push({ platform: "cmdSwitch3", name: "Demo", switches: [] });
+  const f = await fixture(t, configuration);
+  assert.equal(f.doc.querySelectorAll("#field-global-name").length, 1);
+  assert.ok(f.doc.getElementById("field-global-name").closest("details"));
+  assert.equal(
+    f.doc.getElementById("field-global-name").value,
+    "homebridge-cmdswitch2",
+  );
+  f.doc.getElementById("preferences-tab").click();
+  f.input("field-global-name", "cmdSwitch3");
+  await turn();
+  const expected = structuredClone(configuration);
+  expected[0].name = "cmdSwitch3";
+  assert.deepEqual(f.state.updates.at(-1), expected);
+  assert.equal(f.state.saves, 0);
+  assert.equal(f.state.enabled, true);
 });

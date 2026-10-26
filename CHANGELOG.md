@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0-beta.6 — native settings theme and platform name
+
+- Match the settings editor to Homebridge’s native dark modal, panel and input colours, and use the selected Homebridge theme accent instead of Bootstrap blue.
+- Keep the accessory sidebar darker than the editor, with the editor matching the surrounding canvas in both light and dark modes.
+- Default new installations to the platform name `cmdSwitch3`, preserving existing custom names. The existing Advanced preferences → Platform name field remains available; no separate log-label control is added.
+- Clarify full-name plugin search and correct the local preview to mirror Homebridge’s actual iframe theme classes.
+
+Command execution, switch/dimmer behaviour, accessory identities and dependency versions are unchanged from beta.5. Existing installations keep their saved platform name; the new default applies when creating a configuration. The name can still be edited under Advanced preferences.
+
 ## 1.0.0-beta.5 — SSH documentation and settings help
 
 - Highlight local shell and remote SSH commands in the package description, README and settings help; add `ssh`, `openssh`, `ssh-switch`, `ssh-commands`, `remote-control` and `shell-command` discovery keywords.

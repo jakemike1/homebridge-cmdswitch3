@@ -90,7 +90,7 @@
     }
     if (definition.maxLength) input.maxLength = definition.maxLength;
     if (definition.pattern) input.pattern = definition.pattern;
-    if (key === "name") input.required = true;
+    if (key === "name" && !options.global) input.required = true;
     input.value = target[key] ?? definition.default ?? "";
     input.readOnly = !!options.readonly;
     input.spellcheck = false;
@@ -450,7 +450,7 @@
       if (!blocks.length)
         blocks.push({
           platform: "cmdSwitch3",
-          name: "Command Switches",
+          name: "cmdSwitch3",
           switches: [],
         });
       config = blocks[0];
@@ -459,6 +459,14 @@
       for (const item of config.switches) originalItems.add(item);
       const mode = await hb.userCurrentLightingMode();
       document.documentElement.dataset.bsTheme = mode;
+      // Homebridge mirrors its selected theme class into this iframe. Use its
+      // accent rather than Bootstrap's unrelated default blue.
+      const accent = element("span", "", "primary-text");
+      document.body.append(accent);
+      const color = getComputedStyle(accent).color;
+      accent.remove();
+      if (color)
+        byId("cmdswitch-settings").style.setProperty("--cs-accent", color);
       byId("loading").hidden = true;
       byId("accessories-tab").addEventListener("click", () =>
         showView("accessories"),

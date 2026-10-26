@@ -38,6 +38,7 @@ Run checks only when the resulting device actions are appropriate. Keep routine 
 | Deadline            | Use a disposable test action with `sleep 15`                                   | The default eight-second action deadline ends the command; later queued actions for that accessory are cancelled.     |
 | Quiet logging       | Enable No logs, perform a successful action, then the disposable failure check | Routine plugin messages disappear; errors remain. This does not control logs from other plugins or external services. |
 | Settings            | Light/dark theme, narrow screen, edit/save/reopen, invalid values              | Fields remain usable, saved settings return, invalid edits are rejected.                                              |
+| Platform name       | Create a fresh configuration; reopen an existing custom-named configuration    | New configurations use `cmdSwitch3`; existing names stay unchanged. Advanced preferences retains the name control.    |
 | Restart             | Restart the test bridge after saving valid settings                            | Accessories return with the same identities and without duplicate tiles.                                              |
 | Everyday use        | Run normal scenes/automations over several days                                | No unexplained unavailable tiles, missed actions, duplicate commands or growing process counts.                       |
 
@@ -78,6 +79,14 @@ Beta.4 changes npm search metadata and release documentation only. Its runtime, 
 ### Beta.5
 
 Beta.5 adds SSH documentation, settings help and discovery metadata. The runtime modules, schema validation/defaults and dependencies are unchanged from beta.4. All 77 tests and the packed-install check pass locally on Node 26/macOS ARM64. CI runs the same checks across Linux x64, native Linux ARM64 and macOS on Node 22, 24 and 26; see the exact release commit's results linked from its GitHub prerelease.
+
+### Beta.6
+
+Beta.6 updates the settings theme and the default platform name for newly created configurations. The 78-test suite covers the new default, preservation of existing names, and edits to the single Advanced preferences name field without changing accessories, child-bridge configuration or other platform blocks. Command execution modules, validation rules, dependencies and accessory identity generation are unchanged from beta.5.
+
+The theme was inspected in desktop light/dark and narrow layouts using official Homebridge UI 5.29.0 assets and its client bridge, with a synthetic host that mirrors the real iframe theme classes. The dark accessory pane is darker than the surrounding canvas; the editor matches that canvas. The selected host accent is used for selection, tabs and controls. The previously observed source-less MutationObserver diagnostic remains unconfirmed; no failed UI interaction was reproduced. Test other Homebridge colour themes and real-host UI versions when reporting results.
+
+The maintainer's Pi has run the exact public beta.5 since 23 October. Beta.6 is not deployed there. The Pi's saved platform label was separately corrected without changing its plugin files or accessory identities. This is not live beta.6 deployment evidence. CI results for the beta.6 commit are linked from its GitHub prerelease and cover all nine OS/Node combinations.
 
 The three README JSON examples pass schema/runtime validation, four shell examples parse, and eight mocked status-helper cases cover ON, OFF, unknown/empty output and command failures. The expanded help was checked in desktop light, narrow light and narrow dark layouts with a synthetic settings host. No remote SSH commands or device actions were executed, and beta.5 has not been deployed to the maintainer's Pi. Test your SSH alias, key permissions and remote status convention as the Homebridge service account before configuring real actions.
 

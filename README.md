@@ -4,13 +4,13 @@
 
 Run **local shell commands or remote commands over SSH** from switches and dimmable lights in Apple Home. Built for **Homebridge 2**, cmdSwitch3 is a maintained successor to [luisiam/homebridge-cmdswitch2](https://github.com/luisiam/homebridge-cmdswitch2), with a tidy settings page, optional quiet logging and bounded command execution. See the [SSH setup and examples](#remote-commands-over-ssh) for remote switches, status checks and momentary actions.
 
-**Public beta: 1.0.0-beta.5.** Testers are welcome. Start with a fresh or isolated installation and follow [TESTING.md](TESTING.md). Existing cmdSwitch2 installations need a deliberate migration: read [MIGRATION.md](MIGRATION.md) before changing anything.
+**Public beta: 1.0.0-beta.6.** Testers are welcome. Start with a fresh or isolated installation and follow [TESTING.md](TESTING.md). Existing cmdSwitch2 installations need a deliberate migration: read [MIGRATION.md](MIGRATION.md) before changing anything.
 
-Beta.5 adds SSH setup examples, clearer status/error guidance, settings help and SSH search keywords. Runtime behaviour and configuration defaults are unchanged from beta.4. See [CHANGELOG.md](CHANGELOG.md). cmdSwitch3 has not been verified by the Homebridge team.
+Beta.6 matches the settings page to Homebridge's native theme, with a darker accessory sidebar and an editor that matches the surrounding background. New installations default to the platform name `cmdSwitch3`; existing names are preserved and remain editable in Advanced preferences. Command execution is unchanged from beta.5. See [CHANGELOG.md](CHANGELOG.md). cmdSwitch3 has not been verified by the Homebridge team.
 
 ## Install the beta
 
-In Homebridge UI's Plugins search, enter the full package name **`homebridge-cmdswitch3`**. This uses a direct package lookup if a broad search such as `cmdswitch` does not return it yet.
+In Homebridge UI's Plugins search, enter the full package name **`homebridge-cmdswitch3`**. This uses a direct package lookup if a broad search such as `cmdswitch` does not return it. Homebridge uses npm’s filtered search results, which can omit the package even when plain npm search finds it. Beta versions are not excluded by Homebridge’s search; verification is not required to appear.
 
 From your Homebridge terminal, using the same npm installation/prefix as your existing plugins:
 
@@ -41,13 +41,15 @@ Homebridge 2.x, Node 22, 24 or 26, and Linux or macOS. Use a Node version suppor
 
 For remote commands, the Homebridge host also needs an SSH client and non-interactive access to the target machine. Configure SSH authentication outside the plugin; cmdSwitch3 uses your existing SSH setup and has no dedicated credential fields or connection manager.
 
-Beta.3 passed 77 automated tests and an offline packed-install check on each of Node 22.23.3, 24.19.0 and 26.0.0 on macOS, against Homebridge 2.4.0 / HAP-NodeJS 2.2.2. CI covers Linux x64, Linux ARM64 and macOS on all three Node majors. An earlier Raspberry Pi migration using the private beta.1 runtime retained six switches' HomeKit identities and pairing data, with all 42 readable characteristics passing. That installation remains on beta.1. Physical dimming and controller-side automation execution still need broader testing. [Testing coverage and limitations](TESTING.md#what-has-been-tested) explain the evidence.
+The automated suite has 78 tests plus an offline packed-install check against Homebridge 2.4.0 / HAP-NodeJS 2.2.2. CI covers Linux x64, Linux ARM64 and macOS on Node 22, 24 and 26; see the exact release's CI results. A Raspberry Pi deployment of beta.5 retained six switches' HomeKit identities and pairing data, with all 42 readable characteristics passing. Beta.6 has not been deployed to that Pi. Physical dimming and controller-side automation execution still need broader testing. [Testing coverage and limitations](TESTING.md#what-has-been-tested) explain the evidence.
 
 ## Settings
 
 Open the plugin's **Settings** page in Homebridge UI. Add an accessory, choose **Switch** or **Dimmable light**, and enter its commands. Use **Preferences** for No logs and Sequential commands. Edits update Homebridge's draft; the normal host **Save** button persists them. Restart the affected child bridge to apply changes.
 
 The command fields accept local scripts or `ssh` commands. Expand **SSH examples & status** for setup guidance. For an SSH state command that follows the exit-code contract below, enable **Advanced → Strict state checks** so connection errors retain the previous state and are reported as failures. This is opt-in; existing settings and defaults stay unchanged.
+
+New installations default to the platform name `cmdSwitch3`, shown in brackets in Homebridge logs. Existing custom names are preserved. Migrated installations may still show `[homebridge-cmdswitch2]` because their old platform name was retained. To change it, use **Preferences → Advanced preferences → Platform name**, then save and restart that child bridge. Accessory identities are unchanged: keep `switches[].name`, `_bridge` settings, pairing data and cached accessories unchanged. Homebridge also uses the platform name as the child bridge's display-name fallback when no separate bridge name is configured.
 
 Existing accessory names and types are locked in the custom editor to preserve their identities. Rename their visible tiles in Apple Home. Removing an accessory requires a confirmation in the editor. The runtime refuses to silently replace a cached switch with a lightbulb or vice versa.
 
@@ -90,7 +92,7 @@ These are placeholder script paths, not supplied device integrations:
 ```json
 {
   "platform": "cmdSwitch3",
-  "name": "Command Switches",
+  "name": "cmdSwitch3",
   "noLogs": false,
   "synchronous": false,
   "switches": [

@@ -1,6 +1,6 @@
 {
   "name": "homebridge-cmdswitch3",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.6",
   "description": "Local shell and remote SSH switches and dimmers for Homebridge 2. Maintained cmdSwitch2 successor with sequential commands and optional quiet logging.",
   "main": "index.js",
   "license": "Apache-2.0",

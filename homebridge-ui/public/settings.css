@@ -1,11 +1,23 @@
 #cmdswitch-settings {
   --cs-line: var(--bs-border-color, #dce0e5);
   --cs-muted: var(--bs-secondary-color, #59636f);
-  --cs-panel: var(--bs-tertiary-bg, #f6f7f9);
-  color: var(--bs-body-color, #242a32);
+  --cs-panel: #f6f7f9;
+  --cs-canvas: #ffffff;
+  --cs-input: #ffffff;
+  --cs-accent: #673ab7;
+  color: inherit;
+  background: var(--cs-canvas);
   font-size: 14px;
   line-height: 1.5;
   padding: 4px 2px;
+}
+/* Homebridge's modal canvas with a darker, recessed navigation pane. */
+[data-bs-theme="dark"] #cmdswitch-settings {
+  --cs-line: #444444;
+  --cs-muted: #aaaaaa;
+  --cs-panel: #1b1b1b;
+  --cs-canvas: #242424;
+  --cs-input: #242424;
 }
 #cmdswitch-settings [hidden] {
   display: none !important;
@@ -65,8 +77,8 @@
   cursor: pointer;
 }
 .cs-tab[aria-pressed="true"] {
-  color: var(--bs-body-color);
-  border-bottom-color: var(--bs-primary, #673ab7);
+  color: inherit;
+  border-bottom-color: var(--cs-accent);
 }
 .cs-count {
   margin-left: 5px;
@@ -82,6 +94,7 @@
   border-radius: 8px;
   overflow: hidden;
   min-height: 380px;
+  background: var(--cs-canvas);
 }
 .cs-sidebar {
   border-right: 1px solid var(--cs-line);
@@ -122,9 +135,9 @@
   cursor: pointer;
 }
 .cs-accessory[aria-current="true"] {
-  background: var(--bs-body-bg, white);
+  background: var(--cs-canvas);
   border-color: var(--cs-line);
-  box-shadow: 0 1px 2px #00000008;
+  box-shadow: inset 3px 0 0 var(--cs-accent);
 }
 .cs-accessory:hover {
   border-color: var(--cs-line);
@@ -174,7 +187,8 @@
   padding: 9px 11px;
   border-radius: 5px;
   min-height: 39px;
-  background-color: var(--bs-body-bg);
+  background-color: var(--cs-input);
+  border: 1px solid var(--cs-line);
   color: inherit;
 }
 #cmdswitch-settings textarea.form-control {
@@ -183,8 +197,20 @@
   min-height: 60px;
   resize: vertical;
 }
-#cmdswitch-settings .form-control:read-only {
-  background-color: var(--cs-panel);
+#cmdswitch-settings .form-control:read-only,
+#cmdswitch-settings .form-select:disabled {
+  background-color: var(--cs-input);
+  color: var(--cs-muted);
+  opacity: 1;
+}
+#cmdswitch-settings .form-check-input:checked {
+  background-color: var(--cs-accent);
+  border-color: var(--cs-accent);
+}
+#cmdswitch-settings .form-control:focus,
+#cmdswitch-settings .form-select:focus {
+  border-color: var(--cs-accent);
+  box-shadow: none;
 }
 .cs-help {
   color: var(--cs-muted);
@@ -280,7 +306,7 @@
   font-size: 12px;
 }
 #cmdswitch-settings :focus-visible {
-  outline: 3px solid var(--bs-primary, #673ab7);
+  outline: 3px solid var(--cs-accent);
   outline-offset: 3px;
 }
 @media (max-width: 560px) {
