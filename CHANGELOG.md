@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0 — first stable release
+
+- Promote the beta.6 runtime to stable, with no changes to command execution, switches, dimming, sequencing, accessory identities, settings assets, configuration rules or dependencies.
+- Publish stable updates under npm's `latest` tag. The `beta` tag remains on `1.0.0-beta.6`.
+- Update installation, migration and testing guidance, including confirmed everyday use of beta.6 on the maintainer's Raspberry Pi and the remaining hardware and multi-installation coverage gaps.
+- Keep Homebridge verification status explicit: final review remains pending.
+
+Existing cmdSwitch3 beta users can update normally while preserving configuration, cached accessories and pairings. cmdSwitch2 installations still require the deliberate migration described in [MIGRATION.md](MIGRATION.md). This publication does not deploy the package to the maintainer's Pi.
+
 ## 1.0.0-beta.6 — native settings theme and platform name
 
 - Match the settings editor to Homebridge’s native dark modal, panel and input colours, and use the selected Homebridge theme accent instead of Bootstrap blue.

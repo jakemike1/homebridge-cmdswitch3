@@ -1,7 +1,7 @@
 ---
-name: Beta test report
+name: Test report
 about: Share successful checks or observations from normal use
-title: "[Beta test] "
+title: "[Test] "
 ---
 
 ## Environment

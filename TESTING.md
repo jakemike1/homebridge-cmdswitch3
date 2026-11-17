@@ -1,22 +1,22 @@
-# Testing the public beta
+# Testing and release coverage
 
-Thank you for helping test cmdSwitch3. Reports from different scripts, dimmers and Homebridge setups will help decide when 1.0.0 is ready.
+cmdSwitch3 1.0.0 promotes the beta.6 runtime to stable. Reports from different scripts, dimmers and Homebridge setups remain useful for finding regressions and broadening the coverage described below.
 
 ## Start with an isolated setup
 
-Use Homebridge 2 on Linux or macOS with a supported Node version. A fresh instance or separate child bridge is the easiest place to test. Back up before installing. Existing cmdSwitch2 users should read [MIGRATION.md](MIGRATION.md); do not replace a working platform just to try the beta.
+Use Homebridge 2 on Linux or macOS with a supported Node version. A fresh instance or separate child bridge is the easiest place to test. Back up before installing. Existing cmdSwitch2 users should read [MIGRATION.md](MIGRATION.md); use an isolated setup for exploratory tests.
 
-Install `homebridge-cmdswitch3@beta` using your usual Homebridge plugin npm prefix. The [README](README.md#install-the-beta) gives the command. For reproducible reports, note the exact installed version rather than just the tag.
+Install `homebridge-cmdswitch3@1.0.0` using your usual Homebridge plugin npm prefix, or use `@latest` for the current stable release. The [README](README.md#install) gives the command. The `beta` tag remains on beta.6. For reproducible reports, note the exact installed version rather than just the tag.
 
 This optional configuration exercises the UI and momentary-switch behaviour without contacting a device:
 
 ```json
 {
   "platform": "cmdSwitch3",
-  "name": "Beta test commands",
+  "name": "Test commands",
   "switches": [
     {
-      "name": "cmdSwitch3 beta test button",
+      "name": "cmdSwitch3 test button",
       "on_cmd": "exit 0"
     }
   ]
@@ -86,10 +86,18 @@ Beta.6 updates the settings theme and the default platform name for newly create
 
 The theme was inspected in desktop light/dark and narrow layouts using official Homebridge UI 5.29.0 assets and its client bridge, with a synthetic host that mirrors the real iframe theme classes. The dark accessory pane is darker than the surrounding canvas; the editor matches that canvas. The selected host accent is used for selection, tabs and controls. The previously observed source-less MutationObserver diagnostic remains unconfirmed; no failed UI interaction was reproduced. Test other Homebridge colour themes and real-host UI versions when reporting results.
 
-The maintainer's Pi has run the exact public beta.5 since 23 October. Beta.6 is not deployed there. The Pi's saved platform label was separately corrected without changing its plugin files or accessory identities. This is not live beta.6 deployment evidence. CI results for the beta.6 commit are linked from its GitHub prerelease and cover all nine OS/Node combinations.
+At beta.6 publication, the maintainer's Pi remained on beta.5. The maintainer subsequently confirmed beta.6 installed and working through a Homebridge UI screenshot and normal use. CI results for the beta.6 commit are linked from its GitHub prerelease and cover all nine OS/Node combinations.
 
-The three README JSON examples pass schema/runtime validation, four shell examples parse, and eight mocked status-helper cases cover ON, OFF, unknown/empty output and command failures. The expanded help was checked in desktop light, narrow light and narrow dark layouts with a synthetic settings host. No remote SSH commands or device actions were executed, and beta.5 has not been deployed to the maintainer's Pi. Test your SSH alias, key permissions and remote status convention as the Homebridge service account before configuring real actions.
+For the beta.5 documentation checks, the three README JSON examples passed schema/runtime validation, four shell examples parsed, and eight mocked status-helper cases covered ON, OFF, unknown/empty output and command failures. The expanded help was checked in desktop light, narrow light and narrow dark layouts with a synthetic settings host. Those checks executed no remote SSH commands or device actions. Test your SSH alias, key permissions and remote status convention as the Homebridge service account before configuring real actions.
 
-## Stable release criteria
+### Stable 1.0.0
 
-Aim for at least two weeks of normal use on the final candidate, successful switch/dimmer/sequential tests on more than one installation, and no unresolved pairing, command-failure or state-consistency regressions. Fixes affecting runtime behaviour need a further observation period. Calendar time alone is not a release criterion.
+The maintainer approved 1.0.0 after successful everyday use of beta.6, including switches and automations calling separate local heating and hot-water helpers. Recent physical tests confirmed the intended outputs turning on and off through cmdSwitch3. This is evidence from one Raspberry Pi installation; it does not establish physical dimmer coverage, universal migration safety or the safety of every user-supplied command helper.
+
+Stable 1.0.0 changes version/publishing metadata and documentation only. Runtime modules, settings assets, schema, dependencies and identity generation remain identical to beta.6. The release requires the 78-test suite, formatting, syntax/shared-validator checks and offline packed-install/HAP checks on the exact release commit. See the CI links in the [1.0.0 release notes](https://github.com/jakemike1/homebridge-cmdswitch3/releases/tag/v1.0.0). Local macOS checks alone do not establish all supported platforms. No Pi deployment, restart or device command is part of publication.
+
+## Remaining coverage and future releases
+
+The earlier beta guidance aimed for at least two weeks of normal use on the final candidate and successful switch/dimmer/sequential tests on more than one installation. Broader physical dimming, sequential use on multiple installations and diverse command scripts remain coverage gaps. The maintainer accepted those limitations for 1.0.0 based on the automated checks and confirmed everyday switch use; this is not a claim that every original testing target was completed.
+
+For future releases, require no unresolved pairing, command-failure or state-consistency regressions. Changes affecting runtime behaviour need fresh observation and targeted tests. Calendar time alone is not a release criterion. Homebridge verification remains a separate review and has not yet been approved.

@@ -1,8 +1,8 @@
 # Migrating from cmdSwitch2
 
-This beta is **not an automatic in-place update** of cmdSwitch2. It registers as `homebridge-cmdswitch3` / `cmdSwitch3` and requires Homebridge 2. Installing it beside cmdSwitch2 will not transfer the old plugin's accessories or pairing automatically.
+cmdSwitch3 is **not an automatic in-place update** of cmdSwitch2. It registers as `homebridge-cmdswitch3` / `cmdSwitch3` and requires Homebridge 2. Installing it beside cmdSwitch2 will not transfer the old plugin's accessories or pairing automatically.
 
-I completed one controlled migration of six existing switches on Homebridge 2.4.0 / Node 24.19.0, retaining their bridge identity, pairing data, accessory identifiers and services. That installation remains on the private beta.1 build. Public beta.2 uses the same runtime; publishing it does not update that installation.
+I completed one controlled migration of six existing switches on Homebridge 2.4.0 / Node 24.19.0, retaining their bridge identity, pairing data, accessory identifiers and services. That installation was subsequently updated to beta.6 and used for everyday switches and automations. Stable 1.0.0 preserves beta.6's runtime and accessory identity generation; publishing it does not update an existing installation.
 
 ## What stays compatible
 
@@ -24,7 +24,7 @@ Synthetic tests construct six original switches and a dimmer using the archived 
 
 ## Plan an existing-installation migration
 
-There is **no automatic migration command** in this beta. Installing the package and changing `platform` alone is insufficient. If you want to help test without touching existing accessories, use a separate Homebridge instance with distinct example names.
+There is **no automatic migration command**. Installing the package and changing `platform` alone is insufficient. If you want to help test without touching existing accessories, use a separate Homebridge instance with distinct example names.
 
 For an existing installation, an experienced administrator should:
 
@@ -37,6 +37,6 @@ For an existing installation, an experienced administrator should:
 
 Do not remove or re-pair existing accessories to work around a migration problem: that can break Home references and automations. Pairing preservation depends on the complete bridge/cache migration, not merely matching UUIDs. A device-specific migration tool is deliberately not included because it would need to validate each installation's live state first.
 
-## Updating an existing cmdSwitch3 beta
+## Updating an existing cmdSwitch3 installation
 
-Once the plugin/platform ownership is already `homebridge-cmdswitch3` / `cmdSwitch3`, ordinary package updates do not need the cmdSwitch2 ownership transfer. Back up, read the release notes, update to an explicit beta version, restart the affected bridge as required by your Homebridge installation, and verify your accessories. Keep the previous package version available for rollback. Beta.1 was a private build and cannot be restored from the public npm registry.
+Once the plugin/platform ownership is already `homebridge-cmdswitch3` / `cmdSwitch3`, ordinary package updates do not need the cmdSwitch2 ownership transfer. Back up, read the release notes, update to `homebridge-cmdswitch3@1.0.0` or `@latest`, restart the affected bridge as required by your Homebridge installation, and verify your accessories. Keep the previous package version available for rollback. Beta.6 remains available as `homebridge-cmdswitch3@1.0.0-beta.6`. Beta.1 was a private build and cannot be restored from the public npm registry.

@@ -1,7 +1,7 @@
 ---
 name: Bug report
-about: Report a reproducible cmdSwitch3 beta problem
-title: "[Beta bug] "
+about: Report a reproducible cmdSwitch3 problem
+title: "[Bug] "
 ---
 
 ## Environment

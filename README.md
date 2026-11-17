@@ -4,23 +4,23 @@
 
 Run **local shell commands or remote commands over SSH** from switches and dimmable lights in Apple Home. Built for **Homebridge 2**, cmdSwitch3 is a maintained successor to [luisiam/homebridge-cmdswitch2](https://github.com/luisiam/homebridge-cmdswitch2), with a tidy settings page, optional quiet logging and bounded command execution. See the [SSH setup and examples](#remote-commands-over-ssh) for remote switches, status checks and momentary actions.
 
-**Public beta: 1.0.0-beta.6.** Testers are welcome. Start with a fresh or isolated installation and follow [TESTING.md](TESTING.md). Existing cmdSwitch2 installations need a deliberate migration: read [MIGRATION.md](MIGRATION.md) before changing anything.
+**Stable release: 1.0.0.** This release promotes the beta.6 runtime without changing command execution, settings assets, configuration rules, dependencies or accessory identities. Existing cmdSwitch2 installations need a deliberate migration: read [MIGRATION.md](MIGRATION.md) before changing anything.
 
-Beta.6 matches the settings page to Homebridge's native theme, with a darker accessory sidebar and an editor that matches the surrounding background. New installations default to the platform name `cmdSwitch3`; existing names are preserved and remain editable in Advanced preferences. Command execution is unchanged from beta.5. See [CHANGELOG.md](CHANGELOG.md). cmdSwitch3 has not been verified by the Homebridge team.
+The settings page follows Homebridge's native theme, with a darker accessory sidebar and an editor that matches the surrounding background. New installations default to the platform name `cmdSwitch3`; existing names are preserved and remain editable in Advanced preferences. See [CHANGELOG.md](CHANGELOG.md). Homebridge verification remains under review; stable release status does not mean Homebridge verification approval.
 
-## Install the beta
+## Install
 
 In Homebridge UI's Plugins search, enter the full package name **`homebridge-cmdswitch3`**. This uses a direct package lookup if a broad search such as `cmdswitch` does not return it. Homebridge uses npm’s filtered search results, which can omit the package even when plain npm search finds it. Beta versions are not excluded by Homebridge’s search; verification is not required to appear.
 
 From your Homebridge terminal, using the same npm installation/prefix as your existing plugins:
 
 ```sh
-npm install -g homebridge-cmdswitch3@beta
+npm install -g homebridge-cmdswitch3@latest
 ```
 
-The explicit `@beta` tag selects the testing release. This is not a stable release and does not automatically replace cmdSwitch2. Restart Homebridge after the first installation so it discovers the new plugin. Configure **cmdSwitch3** in Homebridge UI, preferably on its own child bridge for a fresh setup.
+The `latest` tag selects stable 1.0.0. Use `homebridge-cmdswitch3@1.0.0` to pin this exact release. Installation does not automatically replace cmdSwitch2. Restart Homebridge after the first installation so it discovers the new plugin. Configure **cmdSwitch3** in Homebridge UI, preferably on its own child bridge for a fresh setup.
 
-**npm tag note:** `latest` and `beta` are kept aligned so Homebridge's package lookup and verification checks select the current public beta. An unqualified install therefore selects a prerelease too. Use the explicit `@beta` tag to make your testing intent clear; no stable 1.0.0 has been released.
+**Updating from beta.6:** use Homebridge UI's update action or install `@latest` through the same npm prefix. Preserve your configuration, cached accessories and pairing data; no migration or re-pairing is needed for an existing cmdSwitch3 installation. The `beta` tag remains on `1.0.0-beta.6`; use `latest` for stable updates. See [TESTING.md](TESTING.md) for coverage and useful checks after updating.
 
 [Report a bug or share test results](https://github.com/jakemike1/homebridge-cmdswitch3/issues/new/choose) · [Release notes](CHANGELOG.md)
 
@@ -41,7 +41,7 @@ Homebridge 2.x, Node 22, 24 or 26, and Linux or macOS. Use a Node version suppor
 
 For remote commands, the Homebridge host also needs an SSH client and non-interactive access to the target machine. Configure SSH authentication outside the plugin; cmdSwitch3 uses your existing SSH setup and has no dedicated credential fields or connection manager.
 
-The automated suite has 78 tests plus an offline packed-install check against Homebridge 2.4.0 / HAP-NodeJS 2.2.2. CI covers Linux x64, Linux ARM64 and macOS on Node 22, 24 and 26; see the exact release's CI results. A Raspberry Pi deployment of beta.5 retained six switches' HomeKit identities and pairing data, with all 42 readable characteristics passing. Beta.6 has not been deployed to that Pi. Physical dimming and controller-side automation execution still need broader testing. [Testing coverage and limitations](TESTING.md#what-has-been-tested) explain the evidence.
+The automated suite has 78 tests plus an offline packed-install check against Homebridge 2.4.0 / HAP-NodeJS 2.2.2. CI covers Linux x64, Linux ARM64 and macOS on Node 22, 24 and 26; see the exact release's CI results. The maintainer has confirmed beta.6 installed on a Raspberry Pi and successful everyday switch and automation use, including local heating and hot-water command helpers. Physical dimming, sequential use across multiple installations and diverse command scripts need broader testing. [Testing coverage and limitations](TESTING.md#what-has-been-tested) explain the evidence.
 
 ## Settings
 
@@ -257,7 +257,7 @@ npm run test:package
 npm pack --ignore-scripts
 ```
 
-`build` runs syntax/shared-validator checks and the test suite. `build:ui` regenerates the browser validator from the runtime validator after changes to `config.js`. `publishConfig.tag` defaults publication to `beta`; stable releases require an explicit release decision. The tarball contains only runtime files, UI assets and documentation, excluding tests, preview fixtures and development dependencies.
+`build` runs syntax/shared-validator checks and the test suite. `build:ui` regenerates the browser validator from the runtime validator after changes to `config.js`. `publishConfig.tag` defaults publication to `latest`; prereleases must explicitly use `--tag beta`. Publish only the checked release archive after the exact commit's CI passes. The tarball contains only runtime files, UI assets and documentation, excluding tests, preview fixtures and development dependencies.
 
 `test:package` packs and installs the actual archive offline in a disposable directory. It compares installed bytes with source and exercises real Homebridge registration, inactive startup, harmless commands and shutdown without a TTY or publishing a HomeKit server. It never installs globally or accesses an existing Homebridge instance.
 
